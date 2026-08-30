@@ -1,12 +1,12 @@
 /**
  * ============================================================
  * EDUCATION FINANCE & MANAGEMENT PLATFORM
- * SERVICE WORKER v0.1.1
+ * SERVICE WORKER v0.1.2
  * ============================================================
  */
 
 const CACHE_NAME =
-  'education-finance-v0-1-1';
+  'education-finance-v0-1-2';
 
 const APP_SHELL = [
   './',
