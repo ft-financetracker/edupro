@@ -1,7 +1,7 @@
 /**
  * ============================================================
  * EDUCATION FINANCE & MANAGEMENT PLATFORM
- * FRONTEND APP v0.1.3
+ * FRONTEND APP v0.2.0
  * ============================================================
  *
  * FOCUS:
@@ -48,11 +48,17 @@ window.EduApp = (function () {
     },
 
     {
+      id: 'admissions',
+      label: 'Pendaftaran',
+      icon: 'how_to_reg',
+      permission: 'admission.view'
+    },
+
+    {
       id: 'participants',
       label: 'Peserta',
       icon: 'groups',
-      permission: 'participant.view',
-      comingSoon: true
+      permission: 'participant.view'
     },
 
     {
@@ -973,6 +979,32 @@ window.EduApp = (function () {
     ) {
       renderComingSoon(
         page
+      );
+
+      return;
+    }
+
+    if (
+      pageId ===
+      'admissions'
+    ) {
+      loadAdmissions(
+        Boolean(
+          config.force
+        )
+      );
+
+      return;
+    }
+
+    if (
+      pageId ===
+      'participants'
+    ) {
+      loadParticipants(
+        Boolean(
+          config.force
+        )
       );
 
       return;
@@ -2340,6 +2372,2000 @@ window.EduApp = (function () {
 
         stopLoading();
       });
+  }
+
+
+
+  /* =========================================================
+   * ADMISSIONS / JALUR PENDAFTARAN
+   * ========================================================= */
+
+  function loadAdmissions(force) {
+    const cached = getPageCache('admissions');
+
+    if (cached && !force) {
+      renderAdmissions(cached);
+      return;
+    }
+
+    if (!cached) {
+      showPageLoading('Membuka Pendaftaran…');
+    }
+
+    startLoading();
+
+    Promise.all([
+      window.EduApi.request(
+        'admission.list',
+        { token: getToken() }
+      ),
+      window.EduApi.request(
+        'period.list',
+        { token: getToken() }
+      )
+    ])
+      .then(function (responses) {
+        const data = {
+          admissions: Array.isArray(responses[0].data)
+            ? responses[0].data
+            : [],
+          periods: Array.isArray(responses[1].data)
+            ? responses[1].data
+            : []
+        };
+
+        setPageCache(
+          'admissions',
+          data
+        );
+
+        renderAdmissions(data);
+      })
+      .catch(renderPageError)
+      .finally(stopLoading);
+  }
+
+
+  function renderAdmissions(data) {
+    const admissions = data.admissions || [];
+    const periods = data.periods || [];
+
+    pageContent.innerHTML = `
+      <section class="module-hero">
+
+        <span class="module-hero__icon">
+          <span class="material-symbols-rounded">
+            how_to_reg
+          </span>
+        </span>
+
+        <div>
+          <p class="section-kicker">
+            PENERIMAAN PESERTA
+          </p>
+
+          <h2>
+            Jalur Pendaftaran
+          </h2>
+
+          <p>
+            Satu T.A dapat memiliki beberapa jalur masuk:
+            PSB, BEA, Internal, Pindahan, dan lainnya.
+          </p>
+        </div>
+
+        <button
+          id="newAdmissionButton"
+          class="primary-button module-hero__action"
+          type="button"
+        >
+          <span class="material-symbols-rounded">
+            add
+          </span>
+
+          Tambah Jalur
+        </button>
+
+      </section>
+
+
+      <article class="content-card">
+
+        ${
+          admissions.length
+            ? `
+              <div class="admission-grid">
+
+                ${admissions
+                  .map(function (item) {
+                    return `
+                      <button
+                        class="admission-card"
+                        type="button"
+                        data-edit-admission="${escapeHtml(item.admission_id)}"
+                      >
+
+                        <div class="admission-card__top">
+
+                          <span class="admission-card__code">
+                            ${escapeHtml(item.admission_id)}
+                          </span>
+
+                          <span
+                            class="state-badge ${
+                              String(item.status).toUpperCase() === 'ACTIVE'
+                                ? 'is-ready'
+                                : 'is-pending'
+                            }"
+                          >
+                            ${escapeHtml(item.status)}
+                          </span>
+
+                        </div>
+
+                        <strong>
+                          ${escapeHtml(item.admission_name)}
+                        </strong>
+
+                        <span class="admission-card__period">
+                          T.A ${escapeHtml(item.period_name || item.period_code)}
+                        </span>
+
+                        <div class="admission-card__meta">
+
+                          <span>
+                            <span class="material-symbols-rounded">
+                              badge
+                            </span>
+
+                            ${escapeHtml(item.admission_code)}
+                          </span>
+
+                          <span>
+                            <span class="material-symbols-rounded">
+                              groups
+                            </span>
+
+                            ${numberFormat(item.participant_count || 0)}
+                            peserta
+                          </span>
+
+                        </div>
+
+                      </button>
+                    `;
+                  })
+                  .join('')}
+
+              </div>
+            `
+            : `
+              <div class="empty-state empty-state--large">
+
+                <span class="empty-state__icon">
+                  <span class="material-symbols-rounded">
+                    how_to_reg
+                  </span>
+                </span>
+
+                <strong>
+                  Belum ada jalur pendaftaran
+                </strong>
+
+                <p>
+                  Contoh: PSB 26/27 dan BEA 26/27 tetap masuk
+                  ke T.A yang sama tetapi memiliki jalur berbeda.
+                </p>
+
+              </div>
+            `
+        }
+
+      </article>
+    `;
+
+    document
+      .getElementById('newAdmissionButton')
+      .addEventListener(
+        'click',
+        function () {
+          openAdmissionForm(
+            null,
+            periods
+          );
+        }
+      );
+
+    document
+      .querySelectorAll('[data-edit-admission]')
+      .forEach(function (button) {
+        button.addEventListener(
+          'click',
+          function () {
+            const item = admissions.find(function (row) {
+              return (
+                row.admission_id ===
+                button.dataset.editAdmission
+              );
+            });
+
+            openAdmissionForm(
+              item || null,
+              periods
+            );
+          }
+        );
+      });
+  }
+
+
+  function openAdmissionForm(item, periods) {
+    const editing = Boolean(item);
+
+    modal(
+      `
+        <h3>
+          ${
+            editing
+              ? 'Edit Jalur Pendaftaran'
+              : 'Tambah Jalur Pendaftaran'
+          }
+        </h3>
+
+        <p>
+          Contoh kode: PSB atau BEA. Sistem otomatis membuat
+          ID seperti JP-2627-PSB.
+        </p>
+
+        <form
+          id="admissionForm"
+          class="form-grid"
+        >
+
+          <input
+            type="hidden"
+            name="admission_id"
+            value="${escapeHtml(item?.admission_id || '')}"
+          >
+
+          <label class="field">
+
+            <span>
+              T.A Masuk
+              <b class="required-mark">*</b>
+            </span>
+
+            <select
+              class="select-input"
+              name="period_id"
+              ${editing ? 'disabled' : ''}
+              required
+            >
+              <option value="">
+                Pilih T.A
+              </option>
+
+              ${periods
+                .map(function (period) {
+                  return `
+                    <option
+                      value="${escapeHtml(period.period_id)}"
+                      ${
+                        String(item?.period_id || '') ===
+                        String(period.period_id)
+                          ? 'selected'
+                          : ''
+                      }
+                    >
+                      ${escapeHtml(period.period_name)}
+                      (${escapeHtml(period.period_id)})
+                    </option>
+                  `;
+                })
+                .join('')}
+
+            </select>
+
+          </label>
+
+
+          <label class="field">
+            <span>
+              Kode Jalur
+              <b class="required-mark">*</b>
+            </span>
+
+            <input
+              class="text-input"
+              name="admission_code"
+              value="${escapeHtml(item?.admission_code || '')}"
+              maxlength="8"
+              ${editing ? 'disabled' : ''}
+              required
+            >
+          </label>
+
+
+          ${inputField(
+            'Nama Jalur / Event',
+            'admission_name',
+            item?.admission_name || '',
+            true
+          )}
+
+
+          ${inputField(
+            'Jenis',
+            'admission_type',
+            item?.admission_type || ''
+          )}
+
+
+          ${inputField(
+            'Tanggal Mulai',
+            'start_date',
+            dateInput(item?.start_date),
+            false,
+            'date'
+          )}
+
+
+          ${inputField(
+            'Tanggal Selesai',
+            'end_date',
+            dateInput(item?.end_date),
+            false,
+            'date'
+          )}
+
+
+          <label class="field">
+            <span>Status</span>
+
+            <select
+              class="select-input"
+              name="status"
+            >
+              <option
+                value="ACTIVE"
+                ${
+                  String(item?.status || 'ACTIVE') === 'ACTIVE'
+                    ? 'selected'
+                    : ''
+                }
+              >
+                Aktif
+              </option>
+
+              <option
+                value="INACTIVE"
+                ${
+                  String(item?.status || '') === 'INACTIVE'
+                    ? 'selected'
+                    : ''
+                }
+              >
+                Tidak Aktif
+              </option>
+            </select>
+          </label>
+
+        </form>
+
+
+        <div class="modal-actions">
+
+          <button
+            class="secondary-button"
+            type="button"
+            data-modal-close
+          >
+            Batal
+          </button>
+
+          <button
+            id="saveAdmissionButton"
+            class="primary-button"
+            type="button"
+          >
+            Simpan
+          </button>
+
+        </div>
+      `
+    );
+
+    document
+      .getElementById('saveAdmissionButton')
+      .addEventListener(
+        'click',
+        saveAdmission
+      );
+  }
+
+
+  function saveAdmission() {
+    const form = document.getElementById(
+      'admissionForm'
+    );
+
+    if (!form.reportValidity()) {
+      return;
+    }
+
+    const payload = Object.fromEntries(
+      new FormData(form).entries()
+    );
+
+    const button = document.getElementById(
+      'saveAdmissionButton'
+    );
+
+    setButtonLoading(
+      button,
+      true,
+      'Menyimpan…'
+    );
+
+    startLoading();
+
+    window.EduApi
+      .request(
+        'admission.save',
+        {
+          token: getToken(),
+          payload: payload
+        }
+      )
+      .then(function () {
+        closeModal();
+
+        invalidatePageCache('admissions');
+        invalidatePageCache('participants');
+
+        toast(
+          'Jalur pendaftaran berhasil disimpan.'
+        );
+
+        loadAdmissions(true);
+      })
+      .catch(function (error) {
+        toast(error.message);
+      })
+      .finally(function () {
+        setButtonLoading(
+          button,
+          false
+        );
+
+        stopLoading();
+      });
+  }
+
+
+
+  /* =========================================================
+   * PARTICIPANTS
+   * ========================================================= */
+
+  function loadParticipants(force) {
+    const cached =
+      getPageCache(
+        'participants'
+      );
+
+    if (
+      cached &&
+      !force
+    ) {
+      renderParticipants(
+        cached
+      );
+
+      return;
+    }
+
+    if (
+      !cached
+    ) {
+      showPageLoading(
+        'Membuka Data Peserta…'
+      );
+    }
+
+    startLoading();
+
+    Promise.all([
+      window.EduApi.request(
+        'participant.list',
+        {
+          token:
+            getToken()
+        }
+      ),
+
+      window.EduApi.request(
+        'period.list',
+        {
+          token:
+            getToken()
+        }
+      ),
+
+      window.EduApi.request(
+        'admission.list',
+        {
+          token:
+            getToken()
+        }
+      )
+    ])
+      .then(function (responses) {
+        const data = {
+          participants:
+            Array.isArray(
+              responses[0].data
+            )
+              ? responses[0].data
+              : [],
+
+          periods:
+            Array.isArray(
+              responses[1].data
+            )
+              ? responses[1].data
+              : [],
+
+          admissions:
+            Array.isArray(
+              responses[2].data
+            )
+              ? responses[2].data
+              : []
+        };
+
+        setPageCache(
+          'participants',
+          data
+        );
+
+        renderParticipants(
+          data
+        );
+      })
+      .catch(
+        renderPageError
+      )
+      .finally(
+        stopLoading
+      );
+  }
+
+
+  function renderParticipants(data) {
+    const participants =
+      data.participants ||
+      [];
+
+    pageContent.innerHTML = `
+      <section class="module-hero">
+
+        <span class="module-hero__icon">
+          <span class="material-symbols-rounded">
+            groups
+          </span>
+        </span>
+
+        <div>
+
+          <p class="section-kicker">
+            MASTER PESERTA
+          </p>
+
+          <h2>
+            Data Peserta
+          </h2>
+
+          <p>
+            Berlaku global untuk siswa, santri, mahasiswa,
+            peserta kursus, dan peserta lembaga lainnya.
+          </p>
+
+        </div>
+
+        <button
+          id="newParticipantButton"
+          class="primary-button module-hero__action"
+          type="button"
+        >
+          <span class="material-symbols-rounded">
+            person_add
+          </span>
+
+          Tambah Peserta
+        </button>
+
+      </section>
+
+
+      <article class="content-card">
+
+        <div class="participant-toolbar">
+
+          <div class="participant-search">
+
+            <span class="material-symbols-rounded">
+              search
+            </span>
+
+            <input
+              id="participantSearch"
+              type="search"
+              placeholder="Cari nama, ID, NIS/NIM, wali…"
+            >
+
+          </div>
+
+
+          <select
+            id="participantPeriodFilter"
+            class="select-input"
+          >
+            <option value="">
+              Semua T.A Masuk
+            </option>
+
+            ${data.periods
+              .map(function (period) {
+                return `
+                  <option value="${escapeHtml(period.period_id)}">
+                    ${escapeHtml(period.period_name)}
+                  </option>
+                `;
+              })
+              .join('')}
+          </select>
+
+
+          <select
+            id="participantAdmissionFilter"
+            class="select-input"
+          >
+            <option value="">
+              Semua Jalur
+            </option>
+
+            ${data.admissions
+              .map(function (admission) {
+                return `
+                  <option value="${escapeHtml(admission.admission_id)}">
+                    ${escapeHtml(admission.admission_code)}
+                    — ${escapeHtml(admission.admission_name)}
+                  </option>
+                `;
+              })
+              .join('')}
+          </select>
+
+
+          <select
+            id="participantStatusFilter"
+            class="select-input"
+          >
+            <option value="">
+              Semua Status
+            </option>
+
+            <option value="ACTIVE">
+              Aktif
+            </option>
+
+            <option value="INACTIVE">
+              Tidak Aktif
+            </option>
+          </select>
+
+        </div>
+
+
+        <div
+          id="participantList"
+          class="participant-list"
+        ></div>
+
+      </article>
+    `;
+
+    document
+      .getElementById(
+        'newParticipantButton'
+      )
+      .addEventListener(
+        'click',
+        function () {
+          openParticipantForm(
+            null,
+            data
+          );
+        }
+      );
+
+    const refreshList =
+      function () {
+        renderParticipantRows(
+          participants,
+          data
+        );
+      };
+
+    [
+      'participantSearch',
+      'participantPeriodFilter',
+      'participantAdmissionFilter',
+      'participantStatusFilter'
+    ].forEach(
+      function (id) {
+        const element =
+          document.getElementById(
+            id
+          );
+
+        element.addEventListener(
+          'input',
+          refreshList
+        );
+
+        element.addEventListener(
+          'change',
+          refreshList
+        );
+      }
+    );
+
+    renderParticipantRows(
+      participants,
+      data
+    );
+  }
+
+
+  function renderParticipantRows(
+    participants,
+    data
+  ) {
+    const search =
+      String(
+        document
+          .getElementById(
+            'participantSearch'
+          )
+          ?.value ||
+        ''
+      )
+        .trim()
+        .toLowerCase();
+
+    const periodId =
+      document
+        .getElementById(
+          'participantPeriodFilter'
+        )
+        ?.value ||
+      '';
+
+    const admissionId =
+      document
+        .getElementById(
+          'participantAdmissionFilter'
+        )
+        ?.value ||
+      '';
+
+    const status =
+      document
+        .getElementById(
+          'participantStatusFilter'
+        )
+        ?.value ||
+      '';
+
+    const filtered =
+      participants.filter(
+        function (participant) {
+          if (
+            periodId &&
+            String(
+              participant.entry_period_id
+            ) !==
+            periodId
+          ) {
+            return false;
+          }
+
+          if (
+            admissionId &&
+            String(
+              participant.admission_id
+            ) !==
+            admissionId
+          ) {
+            return false;
+          }
+
+          if (
+            status &&
+            String(
+              participant.status
+            ) !==
+            status
+          ) {
+            return false;
+          }
+
+          if (
+            search
+          ) {
+            const haystack = [
+              participant.participant_id,
+              participant.participant_number,
+              participant.full_name,
+              participant.program_name,
+              participant.level_name,
+              participant.group_name,
+              participant.admission_name,
+              participant.primary_guardian_name,
+              participant.primary_guardian_phone
+            ]
+              .join(' ')
+              .toLowerCase();
+
+            if (
+              !haystack.includes(
+                search
+              )
+            ) {
+              return false;
+            }
+          }
+
+          return true;
+        }
+      );
+
+    const root =
+      document.getElementById(
+        'participantList'
+      );
+
+    if (
+      !filtered.length
+    ) {
+      root.innerHTML = `
+        <div class="empty-state">
+          Tidak ada peserta yang sesuai filter.
+        </div>
+      `;
+
+      return;
+    }
+
+    root.innerHTML =
+      filtered
+        .map(function (participant) {
+          return `
+            <button
+              class="participant-row"
+              type="button"
+              data-participant-id="${escapeHtml(participant.participant_id)}"
+            >
+
+              <span class="participant-row__avatar">
+                ${escapeHtml(initials(participant.full_name))}
+              </span>
+
+              <span class="participant-row__main">
+
+                <strong>
+                  ${escapeHtml(participant.full_name)}
+                </strong>
+
+                <small>
+                  ${escapeHtml(participant.participant_id)}
+                  ${
+                    participant.participant_number
+                      ? ' • ' + escapeHtml(participant.participant_number)
+                      : ''
+                  }
+                </small>
+
+              </span>
+
+              <span class="participant-row__academic">
+
+                <strong>
+                  ${escapeHtml(participant.program_name || '—')}
+                </strong>
+
+                <small>
+                  ${
+                    [
+                      participant.level_name,
+                      participant.group_name
+                    ]
+                      .filter(Boolean)
+                      .map(escapeHtml)
+                      .join(' • ') ||
+                    'Belum diatur'
+                  }
+                </small>
+
+              </span>
+
+              <span class="participant-row__entry">
+
+                <strong>
+                  ${escapeHtml(participant.entry_period_name || '—')}
+                </strong>
+
+                <small>
+                  ${escapeHtml(participant.admission_code || '—')}
+                </small>
+
+              </span>
+
+              <span
+                class="state-badge ${
+                  participant.status === 'ACTIVE'
+                    ? 'is-ready'
+                    : 'is-pending'
+                }"
+              >
+                ${escapeHtml(participant.status)}
+              </span>
+
+              <span class="material-symbols-rounded">
+                chevron_right
+              </span>
+
+            </button>
+          `;
+        })
+        .join('');
+
+    root
+      .querySelectorAll(
+        '[data-participant-id]'
+      )
+      .forEach(function (button) {
+        button.addEventListener(
+          'click',
+          function () {
+            openParticipantDetail(
+              button.dataset.participantId,
+              data
+            );
+          }
+        );
+      });
+  }
+
+
+  function openParticipantForm(
+    participant,
+    data
+  ) {
+    const editing =
+      Boolean(
+        participant
+      );
+
+    modal(
+      `
+        <h3>
+          ${
+            editing
+              ? 'Edit Peserta'
+              : 'Tambah Peserta'
+          }
+        </h3>
+
+        <p>
+          T.A masuk dan jalur pendaftaran adalah origin history
+          dan tidak dapat diubah setelah peserta dibuat.
+        </p>
+
+        <form
+          id="participantForm"
+          class="form-grid"
+        >
+
+          <input
+            type="hidden"
+            name="participant_id"
+            value="${escapeHtml(participant?.participant_id || '')}"
+          >
+
+
+          <label class="field">
+
+            <span>
+              T.A Masuk
+              <b class="required-mark">*</b>
+            </span>
+
+            <select
+              id="participantEntryPeriod"
+              class="select-input"
+              name="entry_period_id"
+              ${editing ? 'disabled' : ''}
+              required
+            >
+              <option value="">
+                Pilih T.A
+              </option>
+
+              ${data.periods
+                .map(function (period) {
+                  return `
+                    <option
+                      value="${escapeHtml(period.period_id)}"
+                      ${
+                        String(participant?.entry_period_id || '') ===
+                        String(period.period_id)
+                          ? 'selected'
+                          : ''
+                      }
+                    >
+                      ${escapeHtml(period.period_name)}
+                    </option>
+                  `;
+                })
+                .join('')}
+
+            </select>
+
+          </label>
+
+
+          <label class="field">
+
+            <span>
+              Jalur Pendaftaran
+              <b class="required-mark">*</b>
+            </span>
+
+            <select
+              id="participantAdmission"
+              class="select-input"
+              name="admission_id"
+              ${editing ? 'disabled' : ''}
+              required
+            >
+              <option value="">
+                Pilih jalur
+              </option>
+
+              ${data.admissions
+                .filter(function (admission) {
+                  return (
+                    !participant ||
+                    String(admission.period_id) ===
+                    String(participant.entry_period_id)
+                  );
+                })
+                .map(function (admission) {
+                  return `
+                    <option
+                      value="${escapeHtml(admission.admission_id)}"
+                      data-period="${escapeHtml(admission.period_id)}"
+                      ${
+                        String(participant?.admission_id || '') ===
+                        String(admission.admission_id)
+                          ? 'selected'
+                          : ''
+                      }
+                    >
+                      ${escapeHtml(admission.admission_code)}
+                      — ${escapeHtml(admission.admission_name)}
+                    </option>
+                  `;
+                })
+                .join('')}
+
+            </select>
+
+          </label>
+
+
+          ${inputField(
+            'Nama Lengkap',
+            'full_name',
+            participant?.full_name || '',
+            true
+          )}
+
+
+          ${inputField(
+            'NIS / NIM / ID Resmi',
+            'participant_number',
+            participant?.participant_number || ''
+          )}
+
+
+          <label class="field">
+            <span>Jenis Kelamin</span>
+
+            <select
+              class="select-input"
+              name="gender"
+            >
+              <option value="">
+                Pilih
+              </option>
+
+              <option
+                value="L"
+                ${participant?.gender === 'L' ? 'selected' : ''}
+              >
+                Laki-laki
+              </option>
+
+              <option
+                value="P"
+                ${participant?.gender === 'P' ? 'selected' : ''}
+              >
+                Perempuan
+              </option>
+            </select>
+          </label>
+
+
+          ${inputField(
+            'Tempat Lahir',
+            'birth_place',
+            participant?.birth_place || ''
+          )}
+
+
+          ${inputField(
+            'Tanggal Lahir',
+            'birth_date',
+            dateInput(participant?.birth_date),
+            false,
+            'date'
+          )}
+
+
+          ${inputField(
+            'Program / Jenjang',
+            'program_name',
+            participant?.program_name || ''
+          )}
+
+
+          ${inputField(
+            'Tingkat / Semester',
+            'level_name',
+            participant?.level_name || ''
+          )}
+
+
+          ${inputField(
+            'Grup / Kelas',
+            'group_name',
+            participant?.group_name || ''
+          )}
+
+
+          ${inputField(
+            'Tanggal Masuk',
+            'enrollment_date',
+            dateInput(participant?.enrollment_date),
+            false,
+            'date'
+          )}
+
+
+          <label class="field">
+            <span>Status</span>
+
+            <select
+              class="select-input"
+              name="status"
+            >
+              <option
+                value="ACTIVE"
+                ${
+                  String(participant?.status || 'ACTIVE') === 'ACTIVE'
+                    ? 'selected'
+                    : ''
+                }
+              >
+                Aktif
+              </option>
+
+              <option
+                value="INACTIVE"
+                ${
+                  String(participant?.status || '') === 'INACTIVE'
+                    ? 'selected'
+                    : ''
+                }
+              >
+                Tidak Aktif
+              </option>
+            </select>
+          </label>
+
+        </form>
+
+
+        ${
+          editing
+            ? `
+              <div class="id-preview">
+
+                <span>ID Peserta</span>
+
+                <strong>
+                  ${escapeHtml(participant.participant_id)}
+                </strong>
+
+              </div>
+            `
+            : ''
+        }
+
+
+        <div class="modal-actions">
+
+          <button
+            class="secondary-button"
+            type="button"
+            data-modal-close
+          >
+            Batal
+          </button>
+
+          <button
+            id="saveParticipantButton"
+            class="primary-button"
+            type="button"
+          >
+            Simpan
+          </button>
+
+        </div>
+      `,
+      'sheet'
+    );
+
+    if (
+      !editing
+    ) {
+      bindParticipantAdmissionFilter(
+        data.admissions
+      );
+    }
+
+    document
+      .getElementById(
+        'saveParticipantButton'
+      )
+      .addEventListener(
+        'click',
+        saveParticipant
+      );
+  }
+
+
+  function bindParticipantAdmissionFilter(
+    admissions
+  ) {
+    const periodSelect =
+      document.getElementById(
+        'participantEntryPeriod'
+      );
+
+    const admissionSelect =
+      document.getElementById(
+        'participantAdmission'
+      );
+
+    function refreshAdmissionOptions() {
+      const periodId =
+        periodSelect.value;
+
+      admissionSelect.innerHTML = `
+        <option value="">
+          Pilih jalur
+        </option>
+
+        ${admissions
+          .filter(function (admission) {
+            return (
+              !periodId ||
+              String(admission.period_id) === String(periodId)
+            );
+          })
+          .map(function (admission) {
+            return `
+              <option value="${escapeHtml(admission.admission_id)}">
+                ${escapeHtml(admission.admission_code)}
+                — ${escapeHtml(admission.admission_name)}
+              </option>
+            `;
+          })
+          .join('')}
+      `;
+    }
+
+    periodSelect.addEventListener(
+      'change',
+      refreshAdmissionOptions
+    );
+
+    refreshAdmissionOptions();
+  }
+
+
+  function saveParticipant() {
+    const form =
+      document.getElementById(
+        'participantForm'
+      );
+
+    if (
+      !form.reportValidity()
+    ) {
+      return;
+    }
+
+    const payload =
+      Object.fromEntries(
+        new FormData(
+          form
+        ).entries()
+      );
+
+    const participantId =
+      form.querySelector(
+        '[name="participant_id"]'
+      ).value;
+
+    if (
+      participantId
+    ) {
+      payload.participant_id =
+        participantId;
+    }
+
+    const button =
+      document.getElementById(
+        'saveParticipantButton'
+      );
+
+    setButtonLoading(
+      button,
+      true,
+      'Menyimpan…'
+    );
+
+    startLoading();
+
+    window.EduApi
+      .request(
+        'participant.save',
+        {
+          token:
+            getToken(),
+
+          payload:
+            payload
+        }
+      )
+      .then(function (response) {
+        const detail =
+          response.data;
+
+        closeModal();
+
+        invalidatePageCache(
+          'participants'
+        );
+
+        invalidatePageCache(
+          'dashboard'
+        );
+
+        toast(
+          participantId
+            ? 'Data peserta berhasil diperbarui.'
+            : 'Peserta berhasil dibuat: ' +
+              detail.participant.participant_id
+        );
+
+        loadParticipants(
+          true
+        );
+      })
+      .catch(function (error) {
+        toast(
+          error.message
+        );
+      })
+      .finally(function () {
+        setButtonLoading(
+          button,
+          false
+        );
+
+        stopLoading();
+      });
+  }
+
+
+  function openParticipantDetail(
+    participantId,
+    listData
+  ) {
+    const cacheKey =
+      'participant:' +
+      participantId;
+
+    const cached =
+      getPageCache(
+        cacheKey
+      );
+
+    if (
+      cached
+    ) {
+      renderParticipantDetail(
+        cached,
+        listData
+      );
+
+      return;
+    }
+
+    startLoading();
+
+    window.EduApi
+      .request(
+        'participant.get',
+        {
+          token:
+            getToken(),
+
+          participant_id:
+            participantId
+        }
+      )
+      .then(function (response) {
+        setPageCache(
+          cacheKey,
+          response.data
+        );
+
+        renderParticipantDetail(
+          response.data,
+          listData
+        );
+      })
+      .catch(function (error) {
+        toast(
+          error.message
+        );
+      })
+      .finally(
+        stopLoading
+      );
+  }
+
+
+  function renderParticipantDetail(
+    detail,
+    listData
+  ) {
+    const participant =
+      detail.participant;
+
+    const guardians =
+      detail.guardians ||
+      [];
+
+    modal(
+      `
+        <div class="participant-detail">
+
+          <div class="participant-detail__hero">
+
+            <span class="participant-detail__avatar">
+              ${escapeHtml(initials(participant.full_name))}
+            </span>
+
+            <div>
+
+              <span class="participant-detail__id">
+                ${escapeHtml(participant.participant_id)}
+              </span>
+
+              <h3>
+                ${escapeHtml(participant.full_name)}
+              </h3>
+
+              <p>
+                T.A ${escapeHtml(participant.entry_period_name || '—')}
+                •
+                ${escapeHtml(participant.admission_code || '—')}
+              </p>
+
+            </div>
+
+            <button
+              id="editParticipantButton"
+              class="secondary-button compact-button"
+              type="button"
+            >
+              Edit Peserta
+            </button>
+
+          </div>
+
+
+          <div class="participant-detail-grid">
+
+            ${detailItem(
+              'ID Resmi',
+              participant.participant_number || '—'
+            )}
+
+            ${detailItem(
+              'Program / Jenjang',
+              participant.program_name || '—'
+            )}
+
+            ${detailItem(
+              'Tingkat / Semester',
+              participant.level_name || '—'
+            )}
+
+            ${detailItem(
+              'Grup / Kelas',
+              participant.group_name || '—'
+            )}
+
+            ${detailItem(
+              'Asal Pendaftaran',
+              participant.admission_name || '—'
+            )}
+
+            ${detailItem(
+              'Status',
+              participant.status || '—'
+            )}
+
+          </div>
+
+
+          <div class="guardian-section">
+
+            <div class="card-head">
+
+              <div>
+                <p class="section-kicker">
+                  KONTAK
+                </p>
+
+                <h3>
+                  Orang Tua / Wali
+                </h3>
+              </div>
+
+              <button
+                id="addGuardianButton"
+                class="secondary-button compact-button"
+                type="button"
+              >
+                <span class="material-symbols-rounded">
+                  person_add
+                </span>
+
+                Tambah Wali
+              </button>
+
+            </div>
+
+
+            <div class="guardian-list">
+
+              ${
+                guardians.length
+                  ? guardians
+                      .map(guardianCard)
+                      .join('')
+                  : `
+                    <div class="empty-state">
+                      Belum ada data wali.
+                    </div>
+                  `
+              }
+
+            </div>
+
+          </div>
+
+        </div>
+      `,
+      'sheet'
+    );
+
+    document
+      .getElementById(
+        'editParticipantButton'
+      )
+      .addEventListener(
+        'click',
+        function () {
+          openParticipantForm(
+            participant,
+            listData
+          );
+        }
+      );
+
+    document
+      .getElementById(
+        'addGuardianButton'
+      )
+      .addEventListener(
+        'click',
+        function () {
+          openGuardianForm(
+            participant,
+            null,
+            listData
+          );
+        }
+      );
+
+    document
+      .querySelectorAll(
+        '[data-guardian-id]'
+      )
+      .forEach(function (button) {
+        button.addEventListener(
+          'click',
+          function () {
+            const guardian =
+              guardians.find(function (item) {
+                return (
+                  item.guardian_id ===
+                  button.dataset.guardianId
+                );
+              });
+
+            openGuardianForm(
+              participant,
+              guardian || null,
+              listData
+            );
+          }
+        );
+      });
+  }
+
+
+  function guardianCard(guardian) {
+    return `
+      <button
+        class="guardian-card"
+        type="button"
+        data-guardian-id="${escapeHtml(guardian.guardian_id)}"
+      >
+
+        <span class="guardian-card__icon">
+          <span class="material-symbols-rounded">
+            contact_phone
+          </span>
+        </span>
+
+        <span>
+
+          <strong>
+            ${escapeHtml(guardian.guardian_name)}
+          </strong>
+
+          <small>
+            ${escapeHtml(guardian.relationship || 'Wali')}
+            ${
+              String(guardian.is_primary).toLowerCase() === 'true'
+                ? ' • Utama'
+                : ''
+            }
+          </small>
+
+        </span>
+
+        <span class="guardian-card__phone">
+          ${escapeHtml(guardian.phone || '—')}
+        </span>
+
+        <span class="material-symbols-rounded">
+          chevron_right
+        </span>
+
+      </button>
+    `;
+  }
+
+
+  function openGuardianForm(
+    participant,
+    guardian,
+    listData
+  ) {
+    modal(
+      `
+        <h3>
+          ${
+            guardian
+              ? 'Edit Wali'
+              : 'Tambah Wali'
+          }
+        </h3>
+
+        <p>
+          Peserta:
+          <strong>
+            ${escapeHtml(participant.full_name)}
+          </strong>
+        </p>
+
+        <form
+          id="guardianForm"
+          class="form-grid"
+        >
+
+          <input
+            type="hidden"
+            name="participant_id"
+            value="${escapeHtml(participant.participant_id)}"
+          >
+
+          <input
+            type="hidden"
+            name="guardian_id"
+            value="${escapeHtml(guardian?.guardian_id || '')}"
+          >
+
+
+          ${inputField(
+            'Nama Wali',
+            'guardian_name',
+            guardian?.guardian_name || '',
+            true
+          )}
+
+
+          ${inputField(
+            'Hubungan',
+            'relationship',
+            guardian?.relationship || ''
+          )}
+
+
+          ${inputField(
+            'No. HP / WhatsApp',
+            'phone',
+            guardian?.phone || ''
+          )}
+
+
+          ${inputField(
+            'Email',
+            'email',
+            guardian?.email || '',
+            false,
+            'email'
+          )}
+
+
+          <label class="field is-full">
+
+            <span>
+              Alamat
+            </span>
+
+            <textarea
+              class="textarea-input"
+              name="address"
+            >${escapeHtml(guardian?.address || '')}</textarea>
+
+          </label>
+
+
+          <label class="toggle-field is-full">
+
+            <input
+              type="checkbox"
+              name="is_primary"
+              value="true"
+              ${
+                String(guardian?.is_primary || '').toLowerCase() === 'true'
+                  ? 'checked'
+                  : ''
+              }
+            >
+
+            <span class="toggle-field__control"></span>
+
+            <span>
+
+              <strong>
+                Kontak Utama
+              </strong>
+
+              <small>
+                Diprioritaskan untuk informasi tagihan dan komunikasi.
+              </small>
+
+            </span>
+
+          </label>
+
+        </form>
+
+
+        <div class="modal-actions">
+
+          <button
+            class="secondary-button"
+            type="button"
+            data-modal-close
+          >
+            Batal
+          </button>
+
+          <button
+            id="saveGuardianButton"
+            class="primary-button"
+            type="button"
+          >
+            Simpan
+          </button>
+
+        </div>
+      `,
+      'sheet'
+    );
+
+    document
+      .getElementById(
+        'saveGuardianButton'
+      )
+      .addEventListener(
+        'click',
+        function () {
+          saveGuardian(
+            participant,
+            listData
+          );
+        }
+      );
+  }
+
+
+  function saveGuardian(
+    participant,
+    listData
+  ) {
+    const form =
+      document.getElementById(
+        'guardianForm'
+      );
+
+    if (
+      !form.reportValidity()
+    ) {
+      return;
+    }
+
+    const payload =
+      Object.fromEntries(
+        new FormData(
+          form
+        ).entries()
+      );
+
+    payload.is_primary =
+      form
+        .querySelector(
+          '[name="is_primary"]'
+        )
+        .checked;
+
+    const button =
+      document.getElementById(
+        'saveGuardianButton'
+      );
+
+    setButtonLoading(
+      button,
+      true,
+      'Menyimpan…'
+    );
+
+    startLoading();
+
+    window.EduApi
+      .request(
+        'guardian.save',
+        {
+          token:
+            getToken(),
+
+          payload:
+            payload
+        }
+      )
+      .then(function (response) {
+        const detail =
+          response.data;
+
+        setPageCache(
+          'participant:' +
+          participant.participant_id,
+          detail
+        );
+
+        invalidatePageCache(
+          'participants'
+        );
+
+        renderParticipantDetail(
+          detail,
+          listData
+        );
+
+        toast(
+          'Data wali berhasil disimpan.'
+        );
+      })
+      .catch(function (error) {
+        toast(
+          error.message
+        );
+      })
+      .finally(function () {
+        setButtonLoading(
+          button,
+          false
+        );
+
+        stopLoading();
+      });
+  }
+
+
+  function detailItem(
+    label,
+    value
+  ) {
+    return `
+      <div class="participant-detail-item">
+
+        <span>
+          ${escapeHtml(label)}
+        </span>
+
+        <strong>
+          ${escapeHtml(value)}
+        </strong>
+
+      </div>
+    `;
   }
 
 
@@ -3977,7 +6003,7 @@ window.EduApp = (function () {
         navigator
           .serviceWorker
           .register(
-            './service-worker.js?v=013'
+            './service-worker.js?v=020'
           )
           .catch(
             function (error) {
