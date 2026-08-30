@@ -1,16 +1,17 @@
 /**
  * ============================================================
  * EDUCATION FINANCE & MANAGEMENT PLATFORM
- * FRONTEND APP v0.1.1
+ * FRONTEND APP v0.1.3
  * ============================================================
  *
- * PATCH:
- * - Mobile navigation access to Institution / Period
- * - Center CTA / Quick Actions
- * - More menu
- * - Stronger loading feedback
- * - Premium dashboard hero
- * - Admin/Staff workspace identity
+ * FOCUS:
+ * - No stacked loading indicators
+ * - In-memory module cache
+ * - Instant back navigation
+ * - Settings module
+ * - Module ACTIVE / MAINTENANCE / INACTIVE
+ * - Dynamic credit title
+ * - Compact dashboard hero
  */
 
 window.EduApp = (function () {
@@ -19,6 +20,11 @@ window.EduApp = (function () {
   const SESSION_KEY =
     window.EDU_CONFIG.SESSION_KEY;
 
+  const CACHE_TTL =
+    5 *
+    60 *
+    1000;
+
   const pages = [
     {
       id: 'dashboard',
@@ -26,18 +32,21 @@ window.EduApp = (function () {
       icon: 'dashboard',
       permission: 'dashboard.view'
     },
+
     {
       id: 'institution',
       label: 'Institusi',
       icon: 'account_balance',
       permission: 'institution.view'
     },
+
     {
       id: 'periods',
       label: 'Periode',
       icon: 'calendar_month',
       permission: 'period.view'
     },
+
     {
       id: 'participants',
       label: 'Peserta',
@@ -45,6 +54,7 @@ window.EduApp = (function () {
       permission: 'participant.view',
       comingSoon: true
     },
+
     {
       id: 'billing',
       label: 'Tagihan',
@@ -52,6 +62,7 @@ window.EduApp = (function () {
       permission: 'billing.view',
       comingSoon: true
     },
+
     {
       id: 'payments',
       label: 'Pembayaran',
@@ -59,6 +70,7 @@ window.EduApp = (function () {
       permission: 'payment.view',
       comingSoon: true
     },
+
     {
       id: 'receivables',
       label: 'Piutang',
@@ -66,59 +78,118 @@ window.EduApp = (function () {
       permission: 'receivable.view',
       comingSoon: true
     },
+
     {
       id: 'reports',
       label: 'Laporan',
       icon: 'monitoring',
       permission: 'report.view',
       comingSoon: true
+    },
+
+    {
+      id: 'settings',
+      label: 'Pengaturan',
+      icon: 'settings',
+      permission: 'settings.view'
     }
   ];
 
-  let currentUser = null;
-  let permissions = [];
-  let activePage = 'dashboard';
-  let activeRequestCount = 0;
-  let toastTimer = null;
+  let currentUser =
+    null;
+
+  let permissions =
+    [];
+
+  let activePage =
+    'dashboard';
+
+  let runtimeConfig = {
+    app: {
+      credit_title:
+        'Qulaimun.id',
+
+      credit_subtitle:
+        'Education Finance Platform'
+    },
+
+    modules: []
+  };
+
+  const pageCache =
+    new Map();
+
+  let activeRequestCount =
+    0;
+
+  let toastTimer =
+    null;
+
 
   const bootScreen =
-    document.getElementById('bootScreen');
+    document.getElementById(
+      'bootScreen'
+    );
 
   const bootMessage =
-    document.getElementById('bootMessage');
+    document.getElementById(
+      'bootMessage'
+    );
 
   const loginPage =
-    document.getElementById('loginPage');
+    document.getElementById(
+      'loginPage'
+    );
 
   const appShell =
-    document.getElementById('appShell');
+    document.getElementById(
+      'appShell'
+    );
 
   const desktopNav =
-    document.getElementById('desktopNav');
+    document.getElementById(
+      'desktopNav'
+    );
 
   const mobileNav =
-    document.getElementById('mobileNav');
+    document.getElementById(
+      'mobileNav'
+    );
 
   const pageContent =
-    document.getElementById('pageContent');
+    document.getElementById(
+      'pageContent'
+    );
 
   const pageTitle =
-    document.getElementById('pageTitle');
+    document.getElementById(
+      'pageTitle'
+    );
 
   const pageEyebrow =
-    document.getElementById('pageEyebrow');
+    document.getElementById(
+      'pageEyebrow'
+    );
 
   const refreshButton =
-    document.getElementById('refreshButton');
+    document.getElementById(
+      'refreshButton'
+    );
 
   const modalBackdrop =
-    document.getElementById('modalBackdrop');
+    document.getElementById(
+      'modalBackdrop'
+    );
 
   const modalCard =
-    document.getElementById('modalCard');
+    document.getElementById(
+      'modalCard'
+    );
 
   const toastElement =
-    document.getElementById('toast');
+    document.getElementById(
+      'toast'
+    );
 
 
   document.addEventListener(
@@ -126,6 +197,10 @@ window.EduApp = (function () {
     start
   );
 
+
+  /* =========================================================
+   * BOOT
+   * ========================================================= */
 
   function start() {
     createGlobalProgress();
@@ -145,7 +220,9 @@ window.EduApp = (function () {
         const token =
           getToken();
 
-        if (!token) {
+        if (
+          !token
+        ) {
           throw new Error(
             'NO_SESSION'
           );
@@ -154,21 +231,26 @@ window.EduApp = (function () {
         bootMessage.textContent =
           'Memeriksa sesi pengguna…';
 
-        return window.EduApi.request(
-          'session',
-          {
-            token: token
-          }
-        );
+        return window.EduApi
+          .request(
+            'session',
+            {
+              token:
+                token
+            }
+          );
       })
       .then(function (response) {
-        bootMessage.textContent =
-          'Menyiapkan workspace…';
-
         setSessionData(
           response
         );
 
+        bootMessage.textContent =
+          'Menyiapkan menu…';
+
+        return loadRuntimeConfig();
+      })
+      .then(function () {
         enterApp();
       })
       .catch(function () {
@@ -257,27 +339,26 @@ window.EduApp = (function () {
         'loginError'
       );
 
-    button.disabled =
-      true;
-
-    button.innerHTML = `
-      <span class="button-spinner"></span>
-      Memeriksa akun…
-    `;
-
     errorBox.hidden =
       true;
 
-    startLoading(
-      'Memverifikasi akun…'
+    setButtonLoading(
+      button,
+      true,
+      'Memeriksa…'
     );
+
+    startLoading();
 
     window.EduApi
       .request(
         'login',
         {
-          username: username,
-          password: password
+          username:
+            username,
+
+          password:
+            password
         }
       )
       .then(function (response) {
@@ -290,6 +371,9 @@ window.EduApp = (function () {
           response
         );
 
+        return loadRuntimeConfig();
+      })
+      .then(function () {
         enterApp();
       })
       .catch(function (error) {
@@ -300,11 +384,10 @@ window.EduApp = (function () {
           false;
       })
       .finally(function () {
-        button.disabled =
-          false;
-
-        button.textContent =
-          'Masuk';
+        setButtonLoading(
+          button,
+          false
+        );
 
         stopLoading();
       });
@@ -380,6 +463,7 @@ window.EduApp = (function () {
       false;
 
     renderUser();
+    renderCredit();
     renderNavigation();
 
     openPage(
@@ -429,21 +513,172 @@ window.EduApp = (function () {
 
 
   /* =========================================================
-   * NAVIGATION
+   * RUNTIME CONFIG
    * ========================================================= */
 
-  function renderNavigation() {
-    const allowed =
-      pages.filter(
-        function (page) {
+  function loadRuntimeConfig() {
+    return window.EduApi
+      .request(
+        'app.config',
+        {
+          token:
+            getToken()
+        }
+      )
+      .then(function (response) {
+        runtimeConfig =
+          response.data ||
+          runtimeConfig;
+
+        return runtimeConfig;
+      });
+  }
+
+
+  function moduleStatus(
+    moduleId
+  ) {
+    const row =
+      (
+        runtimeConfig.modules ||
+        []
+      ).find(
+        function (item) {
           return (
-            !page.permission ||
-            can(
-              page.permission
-            )
+            item.module_id ===
+            moduleId
           );
         }
       );
+
+    return String(
+      row
+        ? row.status
+        : 'ACTIVE'
+    ).toUpperCase();
+  }
+
+
+  function renderCredit() {
+    const credit =
+      document.getElementById(
+        'appCredit'
+      );
+
+    if (
+      !credit
+    ) {
+      return;
+    }
+
+    credit.innerHTML = `
+      <strong>
+        ${escapeHtml(
+          runtimeConfig.app?.credit_title ||
+          'Qulaimun.id'
+        )}
+      </strong>
+
+      <small>
+        ${escapeHtml(
+          runtimeConfig.app?.credit_subtitle ||
+          'Education Finance Platform'
+        )}
+      </small>
+    `;
+  }
+
+
+  /* =========================================================
+   * CACHE
+   * ========================================================= */
+
+  function setPageCache(
+    key,
+    data
+  ) {
+    pageCache.set(
+      key,
+      {
+        data:
+          data,
+
+        saved_at:
+          Date.now()
+      }
+    );
+  }
+
+
+  function getPageCache(
+    key
+  ) {
+    const item =
+      pageCache.get(
+        key
+      );
+
+    if (
+      !item
+    ) {
+      return null;
+    }
+
+    if (
+      Date.now() -
+      item.saved_at >
+      CACHE_TTL
+    ) {
+      pageCache.delete(
+        key
+      );
+
+      return null;
+    }
+
+    return item.data;
+  }
+
+
+  function invalidatePageCache(
+    key
+  ) {
+    pageCache.delete(
+      key
+    );
+  }
+
+
+  /* =========================================================
+   * NAVIGATION
+   * ========================================================= */
+
+  function availablePages() {
+    return pages.filter(
+      function (page) {
+        if (
+          page.permission &&
+          !can(
+            page.permission
+          )
+        ) {
+          return false;
+        }
+
+        return (
+          moduleStatus(
+            page.id
+          ) !==
+          'INACTIVE'
+        );
+      }
+    );
+  }
+
+
+  function renderNavigation() {
+    const allowed =
+      availablePages();
 
     desktopNav.innerHTML =
       allowed
@@ -452,85 +687,99 @@ window.EduApp = (function () {
         )
         .join('');
 
-    /*
-     * Mobile structure:
-     * Dashboard | Peserta | CTA | Tagihan | Menu
-     *
-     * Institusi dan Periode tetap dapat dibuka melalui Menu
-     * dan Quick Action CTA.
-     */
-    const dashboardPage =
-      allowed.find(
-        function (page) {
-          return (
-            page.id ===
-            'dashboard'
-          );
-        }
-      );
-
-    const participantPage =
-      allowed.find(
-        function (page) {
-          return (
-            page.id ===
-            'participants'
-          );
-        }
-      );
-
-    const billingPage =
-      allowed.find(
-        function (page) {
-          return (
-            page.id ===
-            'billing'
-          );
-        }
-      );
+    const mobilePrimaryIds = [
+      'dashboard',
+      'participants',
+      'billing'
+    ];
 
     const mobileItems = [];
 
-    if (
-      dashboardPage
-    ) {
-      mobileItems.push(
+    mobilePrimaryIds.forEach(
+      function (pageId) {
+        const page =
+          allowed.find(
+            function (item) {
+              return (
+                item.id ===
+                pageId
+              );
+            }
+          );
+
+        if (
+          page
+        ) {
+          mobileItems.push(
+            navButton(
+              page
+            )
+          );
+        }
+      }
+    );
+
+    /*
+     * Pastikan urutannya:
+     * Dashboard | Peserta | CTA | Tagihan | Menu
+     */
+    const dashboard =
+      allowed.find(
+        item =>
+          item.id ===
+          'dashboard'
+      );
+
+    const participant =
+      allowed.find(
+        item =>
+          item.id ===
+          'participants'
+      );
+
+    const billing =
+      allowed.find(
+        item =>
+          item.id ===
+          'billing'
+      );
+
+    const finalItems = [];
+
+    if (dashboard) {
+      finalItems.push(
         navButton(
-          dashboardPage
+          dashboard
         )
       );
     }
 
-    if (
-      participantPage
-    ) {
-      mobileItems.push(
+    if (participant) {
+      finalItems.push(
         navButton(
-          participantPage
+          participant
         )
       );
     }
 
-    mobileItems.push(
+    finalItems.push(
       mobileCtaButton()
     );
 
-    if (
-      billingPage
-    ) {
-      mobileItems.push(
+    if (billing) {
+      finalItems.push(
         navButton(
-          billingPage
+          billing
         )
       );
     }
 
-    mobileItems.push(
+    finalItems.push(
       mobileMoreButton()
     );
 
     mobileNav.innerHTML =
-      mobileItems.join('');
+      finalItems.join('');
 
     bindNavigationButtons();
   }
@@ -539,9 +788,18 @@ window.EduApp = (function () {
   function navButton(
     page
   ) {
+    const status =
+      moduleStatus(
+        page.id
+      );
+
     return `
       <button
-        class="nav-button"
+        class="nav-button ${
+          status === 'MAINTENANCE'
+            ? 'is-maintenance'
+            : ''
+        }"
         type="button"
         data-page="${escapeHtml(page.id)}"
       >
@@ -552,6 +810,15 @@ window.EduApp = (function () {
         <span>
           ${escapeHtml(page.label)}
         </span>
+
+        ${
+          status ===
+          'MAINTENANCE'
+            ? `
+              <span class="nav-maintenance-dot"></span>
+            `
+            : ''
+        }
       </button>
     `;
   }
@@ -563,7 +830,6 @@ window.EduApp = (function () {
         class="mobile-cta"
         type="button"
         data-mobile-cta
-        aria-label="Aksi cepat"
       >
         <span class="mobile-cta__icon">
           <span class="material-symbols-rounded">
@@ -638,226 +904,14 @@ window.EduApp = (function () {
   }
 
 
-  function openQuickActions() {
-    const actions = [];
-
-    if (
-      can(
-        'institution.view'
-      )
-    ) {
-      actions.push({
-        page: 'institution',
-        icon: 'account_balance',
-        title: 'Profil Institusi',
-        subtitle:
-          'Lengkapi identitas lembaga.'
-      });
-    }
-
-    if (
-      can(
-        'period.view'
-      )
-    ) {
-      actions.push({
-        page: 'periods',
-        icon: 'calendar_month',
-        title: 'Periode Akademik',
-        subtitle:
-          'Atur tahun ajaran aktif.'
-      });
-    }
-
-    modal(
-      `
-        <div class="sheet-handle"></div>
-
-        <div class="sheet-head">
-          <p class="eyebrow">
-            QUICK ACTION
-          </p>
-
-          <h3>
-            Mau mengerjakan apa?
-          </h3>
-
-          <p>
-            Aksi utama akan bertambah mengikuti modul yang aktif.
-          </p>
-        </div>
-
-        <div class="quick-action-list">
-          ${actions
-            .map(
-              function (action) {
-                return `
-                  <button
-                    class="quick-action-card"
-                    type="button"
-                    data-quick-page="${escapeHtml(action.page)}"
-                  >
-                    <span class="quick-action-card__icon">
-                      <span class="material-symbols-rounded">
-                        ${escapeHtml(action.icon)}
-                      </span>
-                    </span>
-
-                    <span class="quick-action-card__text">
-                      <strong>
-                        ${escapeHtml(action.title)}
-                      </strong>
-
-                      <small>
-                        ${escapeHtml(action.subtitle)}
-                      </small>
-                    </span>
-
-                    <span class="material-symbols-rounded">
-                      chevron_right
-                    </span>
-                  </button>
-                `;
-              }
-            )
-            .join('')}
-        </div>
-      `,
-      'sheet'
-    );
-
-    document
-      .querySelectorAll(
-        '[data-quick-page]'
-      )
-      .forEach(function (button) {
-        button.addEventListener(
-          'click',
-          function () {
-            const page =
-              button.dataset.quickPage;
-
-            closeModal();
-            openPage(
-              page
-            );
-          }
-        );
-      });
-  }
-
-
-  function openMoreMenu() {
-    const allowed =
-      pages.filter(
-        function (page) {
-          return (
-            !page.permission ||
-            can(
-              page.permission
-            )
-          );
-        }
-      );
-
-    modal(
-      `
-        <div class="sheet-handle"></div>
-
-        <div class="sheet-head">
-          <p class="eyebrow">
-            MENU
-          </p>
-
-          <h3>
-            Semua Modul
-          </h3>
-
-          <p>
-            Workspace administrasi dan keuangan institusi.
-          </p>
-        </div>
-
-        <div class="more-menu-grid">
-          ${allowed
-            .map(
-              function (page) {
-                return `
-                  <button
-                    class="more-menu-card"
-                    type="button"
-                    data-more-page="${escapeHtml(page.id)}"
-                  >
-                    <span class="material-symbols-rounded">
-                      ${escapeHtml(page.icon)}
-                    </span>
-
-                    <strong>
-                      ${escapeHtml(page.label)}
-                    </strong>
-                  </button>
-                `;
-              }
-            )
-            .join('')}
-        </div>
-
-        <button
-          class="sheet-logout-button"
-          type="button"
-          data-sheet-logout
-        >
-          <span class="material-symbols-rounded">
-            logout
-          </span>
-
-          Keluar dari aplikasi
-        </button>
-      `,
-      'sheet'
-    );
-
-    document
-      .querySelectorAll(
-        '[data-more-page]'
-      )
-      .forEach(function (button) {
-        button.addEventListener(
-          'click',
-          function () {
-            const page =
-              button.dataset.morePage;
-
-            closeModal();
-            openPage(
-              page
-            );
-          }
-        );
-      });
-
-    const logoutButton =
-      document.querySelector(
-        '[data-sheet-logout]'
-      );
-
-    if (
-      logoutButton
-    ) {
-      logoutButton.addEventListener(
-        'click',
-        function () {
-          closeModal();
-          confirmLogout();
-        }
-      );
-    }
-  }
-
-
   function openPage(
-    pageId
+    pageId,
+    options
   ) {
+    const config =
+      options ||
+      {};
+
     const page =
       pages.find(
         function (item) {
@@ -874,20 +928,28 @@ window.EduApp = (function () {
       return;
     }
 
+    const status =
+      moduleStatus(
+        pageId
+      );
+
+    if (
+      status ===
+      'INACTIVE'
+    ) {
+      toast(
+        'Modul sedang tidak aktif.'
+      );
+
+      return;
+    }
+
     activePage =
       pageId;
 
-    document
-      .querySelectorAll(
-        '[data-page]'
-      )
-      .forEach(function (button) {
-        button.classList.toggle(
-          'is-active',
-          button.dataset.page ===
-            pageId
-        );
-      });
+    markActiveNavigation(
+      pageId
+    );
 
     pageEyebrow.textContent =
       page.label.toUpperCase();
@@ -895,10 +957,16 @@ window.EduApp = (function () {
     pageTitle.textContent =
       page.label;
 
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
+    if (
+      status ===
+      'MAINTENANCE'
+    ) {
+      renderMaintenance(
+        page
+      );
+
+      return;
+    }
 
     if (
       page.comingSoon
@@ -914,7 +982,12 @@ window.EduApp = (function () {
       pageId ===
       'dashboard'
     ) {
-      loadDashboard();
+      loadDashboard(
+        Boolean(
+          config.force
+        )
+      );
+
       return;
     }
 
@@ -922,7 +995,12 @@ window.EduApp = (function () {
       pageId ===
       'institution'
     ) {
-      loadInstitution();
+      loadInstitution(
+        Boolean(
+          config.force
+        )
+      );
+
       return;
     }
 
@@ -930,8 +1008,42 @@ window.EduApp = (function () {
       pageId ===
       'periods'
     ) {
-      loadPeriods();
+      loadPeriods(
+        Boolean(
+          config.force
+        )
+      );
+
+      return;
     }
+
+    if (
+      pageId ===
+      'settings'
+    ) {
+      loadSettings(
+        Boolean(
+          config.force
+        )
+      );
+    }
+  }
+
+
+  function markActiveNavigation(
+    pageId
+  ) {
+    document
+      .querySelectorAll(
+        '[data-page]'
+      )
+      .forEach(function (button) {
+        button.classList.toggle(
+          'is-active',
+          button.dataset.page ===
+          pageId
+        );
+      });
   }
 
 
@@ -939,14 +1051,39 @@ window.EduApp = (function () {
    * DASHBOARD
    * ========================================================= */
 
-  function loadDashboard() {
-    showPageLoading(
-      'Menyiapkan dashboard…'
-    );
+  function loadDashboard(
+    force
+  ) {
+    const cached =
+      getPageCache(
+        'dashboard'
+      );
 
-    startLoading(
-      'Memuat dashboard…'
-    );
+    if (
+      cached &&
+      !force
+    ) {
+      renderDashboard(
+        cached
+      );
+
+      return;
+    }
+
+    /*
+     * Refresh dengan cache:
+     * biarkan UI lama tetap terlihat.
+     * Hanya progress bar + icon refresh.
+     */
+    if (
+      !cached
+    ) {
+      showPageLoading(
+        'Menyiapkan dashboard…'
+      );
+    }
+
+    startLoading();
 
     window.EduApi
       .request(
@@ -957,6 +1094,11 @@ window.EduApp = (function () {
         }
       )
       .then(function (response) {
+        setPageCache(
+          'dashboard',
+          response.data
+        );
+
         renderDashboard(
           response.data
         );
@@ -998,7 +1140,7 @@ window.EduApp = (function () {
       );
 
     pageContent.innerHTML = `
-      <section class="hero-panel hero-panel--premium">
+      <section class="hero-panel hero-panel--premium hero-panel--compact">
 
         <div class="hero-decoration hero-decoration--one"></div>
         <div class="hero-decoration hero-decoration--two"></div>
@@ -1020,99 +1162,107 @@ window.EduApp = (function () {
 
           </div>
 
-          <p class="hero-kicker">
-            EDUCATION FINANCE • CORE PAYMENT
-          </p>
+          <div class="hero-main-row">
 
-          <h2>
-            ${
-              data.institution
-                ? escapeHtml(
-                    data.institution.institution_name
-                  )
-                : 'Bangun fondasi keuangan institusi'
-            }
-          </h2>
+            <div class="hero-main-copy">
 
-          <p class="hero-copy">
-            ${
-              data.active_period
-                ? 'Periode aktif ' +
-                  escapeHtml(
-                    data.active_period.period_name
-                  ) +
-                  '. Sistem siap dilanjutkan ke tahap data peserta.'
-                : data.institution
-                  ? 'Profil institusi sudah siap. Tentukan periode akademik aktif berikutnya.'
-                  : 'Mulai dari Profil Institusi, kemudian tentukan Periode Akademik aktif.'
-            }
-          </p>
+              <p class="hero-kicker">
+                EDUCATION FINANCE • CORE PAYMENT
+              </p>
 
-          <div class="hero-meta">
+              <h2>
+                ${
+                  data.institution
+                    ? escapeHtml(
+                        data.institution.institution_name
+                      )
+                    : 'Bangun fondasi keuangan institusi'
+                }
+              </h2>
 
-            <span>
-              <span class="material-symbols-rounded">
-                calendar_month
-              </span>
+              <p class="hero-copy">
+                ${
+                  data.active_period
+                    ? 'Periode aktif ' +
+                      escapeHtml(
+                        data.active_period.period_name
+                      ) +
+                      '. Sistem siap dilanjutkan ke tahap data peserta.'
+                    : data.institution
+                      ? 'Profil institusi sudah siap. Tentukan periode akademik aktif berikutnya.'
+                      : 'Mulai dari Profil Institusi, kemudian tentukan Periode Akademik aktif.'
+                }
+              </p>
 
-              ${
-                data.active_period
-                  ? escapeHtml(
-                      data.active_period.period_name
-                    )
-                  : 'Periode belum ditentukan'
-              }
-            </span>
+            </div>
 
-            <span>
-              <span class="material-symbols-rounded">
-                verified_user
-              </span>
+            <div class="hero-side">
 
-              ${
-                currentUser
-                  ? escapeHtml(
-                      currentUser.role_name ||
-                      currentUser.role_code ||
-                      'Administrator'
-                    )
-                  : 'Administrator'
-              }
-            </span>
+              <div class="hero-meta">
 
-          </div>
+                <span>
+                  <span class="material-symbols-rounded">
+                    calendar_month
+                  </span>
 
-          <div class="hero-actions">
+                  ${
+                    data.active_period
+                      ? escapeHtml(
+                          data.active_period.period_name
+                        )
+                      : 'Periode belum ditentukan'
+                  }
+                </span>
 
-            <button
-              class="hero-primary-button"
-              type="button"
-              data-hero-page="${escapeHtml(heroAction.page)}"
-            >
-              <span class="material-symbols-rounded">
-                ${escapeHtml(heroAction.icon)}
-              </span>
+                <span>
+                  <span class="material-symbols-rounded">
+                    verified_user
+                  </span>
 
-              ${escapeHtml(heroAction.label)}
-            </button>
+                  ${escapeHtml(
+                    currentUser?.role_name ||
+                    currentUser?.role_code ||
+                    'Administrator'
+                  )}
+                </span>
 
-            ${
-              institutionReady
-                ? `
-                  <button
-                    class="hero-secondary-button"
-                    type="button"
-                    data-hero-page="institution"
-                  >
-                    <span class="material-symbols-rounded">
-                      tune
-                    </span>
+              </div>
 
-                    Profil Institusi
-                  </button>
-                `
-                : ''
-            }
+              <div class="hero-actions">
+
+                <button
+                  class="hero-primary-button"
+                  type="button"
+                  data-hero-page="${escapeHtml(heroAction.page)}"
+                >
+                  <span class="material-symbols-rounded">
+                    ${escapeHtml(heroAction.icon)}
+                  </span>
+
+                  ${escapeHtml(heroAction.label)}
+                </button>
+
+                ${
+                  institutionReady
+                    ? `
+                      <button
+                        class="hero-secondary-button"
+                        type="button"
+                        data-hero-page="institution"
+                      >
+                        <span class="material-symbols-rounded">
+                          tune
+                        </span>
+
+                        Profil Institusi
+                      </button>
+                    `
+                    : ''
+                }
+
+              </div>
+
+            </div>
 
           </div>
 
@@ -1222,6 +1372,7 @@ window.EduApp = (function () {
         <article class="content-card">
 
           <div class="card-head">
+
             <div>
               <p class="section-kicker">
                 WORKSPACE
@@ -1235,6 +1386,7 @@ window.EduApp = (function () {
                 Ini bukan tampilan Peserta/Wali.
               </p>
             </div>
+
           </div>
 
           <div class="workspace-info">
@@ -1284,8 +1436,10 @@ window.EduApp = (function () {
       return {
         page:
           'institution',
+
         icon:
           'account_balance',
+
         label:
           'Lengkapi Institusi'
       };
@@ -1297,8 +1451,10 @@ window.EduApp = (function () {
       return {
         page:
           'periods',
+
         icon:
           'calendar_month',
+
         label:
           'Atur Periode Akademik'
       };
@@ -1307,8 +1463,10 @@ window.EduApp = (function () {
     return {
       page:
         'participants',
+
       icon:
         'person_add',
+
       label:
         'Lanjut ke Data Peserta'
     };
@@ -1414,14 +1572,34 @@ window.EduApp = (function () {
    * INSTITUTION
    * ========================================================= */
 
-  function loadInstitution() {
-    showPageLoading(
-      'Membuka Profil Institusi…'
-    );
+  function loadInstitution(
+    force
+  ) {
+    const cached =
+      getPageCache(
+        'institution'
+      );
 
-    startLoading(
-      'Memuat profil institusi…'
-    );
+    if (
+      cached &&
+      !force
+    ) {
+      renderInstitution(
+        cached
+      );
+
+      return;
+    }
+
+    if (
+      !cached
+    ) {
+      showPageLoading(
+        'Membuka Profil Institusi…'
+      );
+    }
+
+    startLoading();
 
     window.EduApi
       .request(
@@ -1432,9 +1610,17 @@ window.EduApp = (function () {
         }
       )
       .then(function (response) {
-        renderInstitution(
+        const data =
           response.data ||
-          {}
+          {};
+
+        setPageCache(
+          'institution',
+          data
+        );
+
+        renderInstitution(
+          data
         );
       })
       .catch(
@@ -1500,17 +1686,18 @@ window.EduApp = (function () {
             'Nama Legal',
             'legal_name',
             data.legal_name ||
-            ''
+              ''
           )}
 
           ${inputField(
             'Nama Singkat',
             'short_name',
             data.short_name ||
-            ''
+              ''
           )}
 
           <label class="field is-full">
+
             <span>
               Alamat
             </span>
@@ -1519,34 +1706,35 @@ window.EduApp = (function () {
               class="textarea-input"
               name="address"
             >${escapeHtml(data.address || '')}</textarea>
+
           </label>
 
           ${inputField(
             'Kota',
             'city',
             data.city ||
-            ''
+              ''
           )}
 
           ${inputField(
             'Provinsi',
             'province',
             data.province ||
-            ''
+              ''
           )}
 
           ${inputField(
             'Telepon',
             'phone',
             data.phone ||
-            ''
+              ''
           )}
 
           ${inputField(
             'Email',
             'email',
             data.email ||
-            '',
+              '',
             false,
             'email'
           )}
@@ -1555,7 +1743,7 @@ window.EduApp = (function () {
             'Website',
             'website',
             data.website ||
-            ''
+              ''
           )}
 
         </form>
@@ -1620,9 +1808,7 @@ window.EduApp = (function () {
       'Menyimpan…'
     );
 
-    startLoading(
-      'Menyimpan Profil Institusi…'
-    );
+    startLoading();
 
     window.EduApi
       .request(
@@ -1630,16 +1816,32 @@ window.EduApp = (function () {
         {
           token:
             getToken(),
+
           payload:
             payload
         }
       )
-      .then(function () {
+      .then(function (response) {
+        const data =
+          response.data ||
+          payload;
+
+        setPageCache(
+          'institution',
+          data
+        );
+
+        invalidatePageCache(
+          'dashboard'
+        );
+
+        renderInstitution(
+          data
+        );
+
         toast(
           'Profil institusi berhasil disimpan.'
         );
-
-        loadInstitution();
       })
       .catch(function (error) {
         toast(
@@ -1657,93 +1859,38 @@ window.EduApp = (function () {
   }
 
 
-  function inputField(
-    label,
-    name,
-    value,
-    required,
-    type
-  ) {
-    return `
-      <label class="field">
-
-        <span>
-          ${escapeHtml(label)}
-          ${required ? '<b class="required-mark">*</b>' : ''}
-        </span>
-
-        <input
-          class="text-input"
-          type="${type || 'text'}"
-          name="${escapeHtml(name)}"
-          value="${escapeHtml(value)}"
-          ${required ? 'required' : ''}
-        >
-
-      </label>
-    `;
-  }
-
-
-  function institutionTypeField(
-    value
-  ) {
-    const options = [
-      '',
-      'TK / PAUD',
-      'SD / MI',
-      'SMP / MTs',
-      'SMA / SMK / MA',
-      'Pesantren',
-      'Lembaga Kursus',
-      'Perguruan Tinggi',
-      'Multi Unit'
-    ];
-
-    return `
-      <label class="field">
-
-        <span>
-          Jenis Institusi
-        </span>
-
-        <select
-          class="select-input"
-          name="institution_type"
-        >
-          ${options
-            .map(
-              function (item) {
-                return `
-                  <option
-                    value="${escapeHtml(item)}"
-                    ${item === value ? 'selected' : ''}
-                  >
-                    ${escapeHtml(item || 'Pilih jenis')}
-                  </option>
-                `;
-              }
-            )
-            .join('')}
-        </select>
-
-      </label>
-    `;
-  }
-
-
   /* =========================================================
-   * ACADEMIC PERIOD
+   * PERIODS
    * ========================================================= */
 
-  function loadPeriods() {
-    showPageLoading(
-      'Membuka Periode Akademik…'
-    );
+  function loadPeriods(
+    force
+  ) {
+    const cached =
+      getPageCache(
+        'periods'
+      );
 
-    startLoading(
-      'Memuat periode akademik…'
-    );
+    if (
+      cached &&
+      !force
+    ) {
+      renderPeriods(
+        cached
+      );
+
+      return;
+    }
+
+    if (
+      !cached
+    ) {
+      showPageLoading(
+        'Membuka Periode Akademik…'
+      );
+    }
+
+    startLoading();
 
     window.EduApi
       .request(
@@ -1754,12 +1901,20 @@ window.EduApp = (function () {
         }
       )
       .then(function (response) {
-        renderPeriods(
+        const rows =
           Array.isArray(
             response.data
           )
             ? response.data
-            : []
+            : [];
+
+        setPageCache(
+          'periods',
+          rows
+        );
+
+        renderPeriods(
+          rows
         );
       })
       .catch(
@@ -1910,6 +2065,7 @@ window.EduApp = (function () {
                 function (row) {
                   return `
                     <tr>
+
                       <td>
                         ${escapeHtml(row.period_code)}
                       </td>
@@ -1948,6 +2104,7 @@ window.EduApp = (function () {
                           Edit
                         </button>
                       </td>
+
                     </tr>
                   `;
                 }
@@ -2045,6 +2202,7 @@ window.EduApp = (function () {
             <span class="toggle-field__control"></span>
 
             <span>
+
               <strong>
                 Jadikan periode aktif
               </strong>
@@ -2052,6 +2210,7 @@ window.EduApp = (function () {
               <small>
                 Periode aktif sebelumnya otomatis dinonaktifkan.
               </small>
+
             </span>
 
           </label>
@@ -2128,9 +2287,7 @@ window.EduApp = (function () {
       'Menyimpan…'
     );
 
-    startLoading(
-      'Menyimpan Periode Akademik…'
-    );
+    startLoading();
 
     window.EduApi
       .request(
@@ -2138,18 +2295,37 @@ window.EduApp = (function () {
         {
           token:
             getToken(),
+
           payload:
             payload
         }
       )
-      .then(function () {
+      .then(function (response) {
+        const rows =
+          Array.isArray(
+            response.data
+          )
+            ? response.data
+            : [];
+
+        setPageCache(
+          'periods',
+          rows
+        );
+
+        invalidatePageCache(
+          'dashboard'
+        );
+
         closeModal();
+
+        renderPeriods(
+          rows
+        );
 
         toast(
           'Periode akademik berhasil disimpan.'
         );
-
-        loadPeriods();
       })
       .catch(function (error) {
         toast(
@@ -2168,7 +2344,1040 @@ window.EduApp = (function () {
 
 
   /* =========================================================
-   * LOADING / UI FEEDBACK
+   * SETTINGS
+   * ========================================================= */
+
+  function loadSettings(
+    force
+  ) {
+    const cached =
+      getPageCache(
+        'settings'
+      );
+
+    if (
+      cached &&
+      !force
+    ) {
+      renderSettings(
+        cached
+      );
+
+      return;
+    }
+
+    if (
+      !cached
+    ) {
+      showPageLoading(
+        'Membuka Pengaturan…'
+      );
+    }
+
+    startLoading();
+
+    window.EduApi
+      .request(
+        'settings.get',
+        {
+          token:
+            getToken()
+        }
+      )
+      .then(function (response) {
+        const data =
+          response.data ||
+          {};
+
+        setPageCache(
+          'settings',
+          data
+        );
+
+        renderSettings(
+          data
+        );
+      })
+      .catch(
+        renderPageError
+      )
+      .finally(
+        stopLoading
+      );
+  }
+
+
+  function renderSettings(
+    data
+  ) {
+    const app =
+      data.app ||
+      {};
+
+    const modules =
+      Array.isArray(
+        data.modules
+      )
+        ? data.modules
+        : [];
+
+    pageContent.innerHTML = `
+      <section class="module-hero">
+
+        <span class="module-hero__icon">
+          <span class="material-symbols-rounded">
+            settings
+          </span>
+        </span>
+
+        <div>
+
+          <p class="section-kicker">
+            SYSTEM
+          </p>
+
+          <h2>
+            Pengaturan
+          </h2>
+
+          <p>
+            Atur identitas credit aplikasi dan ketersediaan modul.
+          </p>
+
+        </div>
+
+      </section>
+
+
+      <section class="settings-grid">
+
+        <article class="content-card">
+
+          <div class="card-head">
+
+            <div>
+
+              <p class="section-kicker">
+                APP CREDIT
+              </p>
+
+              <h3>
+                Credit Title
+              </h3>
+
+              <p>
+                Identitas pengembang/ekosistem yang tampil pada aplikasi.
+              </p>
+
+            </div>
+
+          </div>
+
+
+          <form
+            id="creditSettingsForm"
+            class="form-grid"
+          >
+
+            ${inputField(
+              'Credit Title',
+              'credit_title',
+              app.credit_title ||
+              'Qulaimun.id',
+              true
+            )}
+
+            ${inputField(
+              'Credit Subtitle',
+              'credit_subtitle',
+              app.credit_subtitle ||
+              'Education Finance Platform',
+              true
+            )}
+
+          </form>
+
+          <div class="credit-preview">
+
+            <span>
+              PREVIEW
+            </span>
+
+            <strong id="creditPreviewTitle">
+              ${escapeHtml(
+                app.credit_title ||
+                'Qulaimun.id'
+              )}
+            </strong>
+
+            <small id="creditPreviewSubtitle">
+              ${escapeHtml(
+                app.credit_subtitle ||
+                'Education Finance Platform'
+              )}
+            </small>
+
+          </div>
+
+        </article>
+
+
+        <article class="content-card">
+
+          <div class="card-head">
+
+            <div>
+
+              <p class="section-kicker">
+                MODULE CONTROL
+              </p>
+
+              <h3>
+                Status Menu
+              </h3>
+
+              <p>
+                Active tampil normal, Maintenance tetap terlihat,
+                Inactive disembunyikan.
+              </p>
+
+            </div>
+
+          </div>
+
+
+          <div class="module-setting-list">
+
+            ${modules
+              .map(
+                function (module) {
+                  const locked =
+                    module.module_id ===
+                    'settings';
+
+                  return `
+                    <div
+                      class="module-setting-row"
+                      data-module-row="${escapeHtml(module.module_id)}"
+                    >
+
+                      <div class="module-setting-row__identity">
+
+                        <span class="module-setting-row__icon">
+                          <span class="material-symbols-rounded">
+                            ${escapeHtml(
+                              getPageIcon(
+                                module.module_id
+                              )
+                            )}
+                          </span>
+                        </span>
+
+                        <div>
+
+                          <strong>
+                            ${escapeHtml(module.module_name)}
+                          </strong>
+
+                          <small>
+                            ${escapeHtml(module.module_id)}
+                          </small>
+
+                        </div>
+
+                      </div>
+
+
+                      <select
+                        class="select-input module-status-select"
+                        data-module-status="${escapeHtml(module.module_id)}"
+                        ${locked ? 'disabled' : ''}
+                      >
+
+                        <option
+                          value="ACTIVE"
+                          ${module.status === 'ACTIVE' ? 'selected' : ''}
+                        >
+                          Aktif
+                        </option>
+
+                        <option
+                          value="MAINTENANCE"
+                          ${module.status === 'MAINTENANCE' ? 'selected' : ''}
+                        >
+                          Maintenance
+                        </option>
+
+                        <option
+                          value="INACTIVE"
+                          ${module.status === 'INACTIVE' ? 'selected' : ''}
+                        >
+                          Tidak Aktif
+                        </option>
+
+                      </select>
+
+                    </div>
+                  `;
+                }
+              )
+              .join('')}
+
+          </div>
+
+
+          <div class="module-status-note">
+
+            <span class="status-legend is-active">
+              Active
+            </span>
+
+            <span>
+              Menu normal
+            </span>
+
+
+            <span class="status-legend is-maintenance">
+              Maintenance
+            </span>
+
+            <span>
+              Menu tampil, tetapi tidak bisa digunakan
+            </span>
+
+
+            <span class="status-legend is-inactive">
+              Inactive
+            </span>
+
+            <span>
+              Menu disembunyikan
+            </span>
+
+          </div>
+
+        </article>
+
+      </section>
+
+
+      <div class="settings-save-bar">
+
+        <span>
+          Perubahan berlaku untuk menu aplikasi setelah disimpan.
+        </span>
+
+        <button
+          id="saveSettingsButton"
+          class="primary-button"
+          type="button"
+        >
+          <span class="material-symbols-rounded">
+            save
+          </span>
+
+          Simpan Pengaturan
+        </button>
+
+      </div>
+    `;
+
+    bindSettingsPreview();
+
+    document
+      .getElementById(
+        'saveSettingsButton'
+      )
+      .addEventListener(
+        'click',
+        saveSettings
+      );
+  }
+
+
+  function bindSettingsPreview() {
+    const titleInput =
+      document.querySelector(
+        '[name="credit_title"]'
+      );
+
+    const subtitleInput =
+      document.querySelector(
+        '[name="credit_subtitle"]'
+      );
+
+    const titlePreview =
+      document.getElementById(
+        'creditPreviewTitle'
+      );
+
+    const subtitlePreview =
+      document.getElementById(
+        'creditPreviewSubtitle'
+      );
+
+    titleInput?.addEventListener(
+      'input',
+      function () {
+        titlePreview.textContent =
+          titleInput.value ||
+          'Qulaimun.id';
+      }
+    );
+
+    subtitleInput?.addEventListener(
+      'input',
+      function () {
+        subtitlePreview.textContent =
+          subtitleInput.value ||
+          'Education Finance Platform';
+      }
+    );
+  }
+
+
+  function saveSettings() {
+    const form =
+      document.getElementById(
+        'creditSettingsForm'
+      );
+
+    if (
+      !form.reportValidity()
+    ) {
+      return;
+    }
+
+    const appData =
+      Object.fromEntries(
+        new FormData(
+          form
+        ).entries()
+      );
+
+    const modules =
+      Array.from(
+        document.querySelectorAll(
+          '[data-module-status]'
+        )
+      ).map(
+        function (select) {
+          return {
+            module_id:
+              select.dataset.moduleStatus,
+
+            status:
+              select.value
+          };
+        }
+      );
+
+    const button =
+      document.getElementById(
+        'saveSettingsButton'
+      );
+
+    setButtonLoading(
+      button,
+      true,
+      'Menyimpan…'
+    );
+
+    startLoading();
+
+    window.EduApi
+      .request(
+        'settings.save',
+        {
+          token:
+            getToken(),
+
+          payload: {
+            credit_title:
+              appData.credit_title,
+
+            credit_subtitle:
+              appData.credit_subtitle,
+
+            modules:
+              modules
+          }
+        }
+      )
+      .then(function (response) {
+        const data =
+          response.data ||
+          {};
+
+        runtimeConfig =
+          data;
+
+        setPageCache(
+          'settings',
+          data
+        );
+
+        renderCredit();
+        renderNavigation();
+
+        /*
+         * Dashboard dapat berubah jika module status berubah.
+         */
+        invalidatePageCache(
+          'dashboard'
+        );
+
+        renderSettings(
+          data
+        );
+
+        markActiveNavigation(
+          'settings'
+        );
+
+        toast(
+          'Pengaturan berhasil disimpan.'
+        );
+      })
+      .catch(function (error) {
+        toast(
+          error.message
+        );
+      })
+      .finally(function () {
+        setButtonLoading(
+          button,
+          false
+        );
+
+        stopLoading();
+      });
+  }
+
+
+  function getPageIcon(
+    pageId
+  ) {
+    const page =
+      pages.find(
+        function (item) {
+          return (
+            item.id ===
+            pageId
+          );
+        }
+      );
+
+    return page
+      ? page.icon
+      : 'widgets';
+  }
+
+
+  /* =========================================================
+   * QUICK ACTION / MENU
+   * ========================================================= */
+
+  function openQuickActions() {
+    const actions = [];
+
+    [
+      {
+        page:
+          'institution',
+
+        icon:
+          'account_balance',
+
+        title:
+          'Profil Institusi',
+
+        subtitle:
+          'Lengkapi identitas lembaga.'
+      },
+
+      {
+        page:
+          'periods',
+
+        icon:
+          'calendar_month',
+
+        title:
+          'Periode Akademik',
+
+        subtitle:
+          'Atur tahun ajaran aktif.'
+      }
+    ].forEach(
+      function (action) {
+        if (
+          moduleStatus(
+            action.page
+          ) ===
+          'INACTIVE'
+        ) {
+          return;
+        }
+
+        const page =
+          pages.find(
+            item =>
+              item.id ===
+              action.page
+          );
+
+        if (
+          page?.permission &&
+          !can(
+            page.permission
+          )
+        ) {
+          return;
+        }
+
+        actions.push(
+          action
+        );
+      }
+    );
+
+    modal(
+      `
+        <div class="sheet-handle"></div>
+
+        <div class="sheet-head">
+
+          <p class="eyebrow">
+            QUICK ACTION
+          </p>
+
+          <h3>
+            Mau mengerjakan apa?
+          </h3>
+
+          <p>
+            Aksi utama bertambah mengikuti modul yang aktif.
+          </p>
+
+        </div>
+
+
+        <div class="quick-action-list">
+
+          ${actions
+            .map(
+              function (action) {
+                return `
+                  <button
+                    class="quick-action-card"
+                    type="button"
+                    data-quick-page="${escapeHtml(action.page)}"
+                  >
+
+                    <span class="quick-action-card__icon">
+                      <span class="material-symbols-rounded">
+                        ${escapeHtml(action.icon)}
+                      </span>
+                    </span>
+
+                    <span class="quick-action-card__text">
+
+                      <strong>
+                        ${escapeHtml(action.title)}
+                      </strong>
+
+                      <small>
+                        ${escapeHtml(action.subtitle)}
+                      </small>
+
+                    </span>
+
+                    <span class="material-symbols-rounded">
+                      chevron_right
+                    </span>
+
+                  </button>
+                `;
+              }
+            )
+            .join('')}
+
+        </div>
+      `,
+      'sheet'
+    );
+
+    document
+      .querySelectorAll(
+        '[data-quick-page]'
+      )
+      .forEach(function (button) {
+        button.addEventListener(
+          'click',
+          function () {
+            const page =
+              button.dataset.quickPage;
+
+            closeModal();
+
+            openPage(
+              page
+            );
+          }
+        );
+      });
+  }
+
+
+  function openMoreMenu() {
+    const allowed =
+      availablePages();
+
+    modal(
+      `
+        <div class="sheet-handle"></div>
+
+        <div class="sheet-head">
+
+          <p class="eyebrow">
+            MENU
+          </p>
+
+          <h3>
+            Semua Modul
+          </h3>
+
+          <p>
+            Workspace administrasi dan keuangan institusi.
+          </p>
+
+        </div>
+
+
+        <div class="more-menu-grid">
+
+          ${allowed
+            .map(
+              function (page) {
+                const status =
+                  moduleStatus(
+                    page.id
+                  );
+
+                return `
+                  <button
+                    class="more-menu-card ${
+                      status === 'MAINTENANCE'
+                        ? 'is-maintenance'
+                        : ''
+                    }"
+                    type="button"
+                    data-more-page="${escapeHtml(page.id)}"
+                  >
+
+                    <span class="material-symbols-rounded">
+                      ${escapeHtml(page.icon)}
+                    </span>
+
+                    <strong>
+                      ${escapeHtml(page.label)}
+                    </strong>
+
+                    ${
+                      status === 'MAINTENANCE'
+                        ? `
+                          <small>
+                            Maintenance
+                          </small>
+                        `
+                        : ''
+                    }
+
+                  </button>
+                `;
+              }
+            )
+            .join('')}
+
+        </div>
+
+
+        <div class="menu-credit">
+
+          <strong>
+            ${escapeHtml(
+              runtimeConfig.app?.credit_title ||
+              ''
+            )}
+          </strong>
+
+          <small>
+            ${escapeHtml(
+              runtimeConfig.app?.credit_subtitle ||
+              ''
+            )}
+          </small>
+
+        </div>
+
+
+        <button
+          class="sheet-logout-button"
+          type="button"
+          data-sheet-logout
+        >
+
+          <span class="material-symbols-rounded">
+            logout
+          </span>
+
+          Keluar dari aplikasi
+
+        </button>
+      `,
+      'sheet'
+    );
+
+    document
+      .querySelectorAll(
+        '[data-more-page]'
+      )
+      .forEach(function (button) {
+        button.addEventListener(
+          'click',
+          function () {
+            const page =
+              button.dataset.morePage;
+
+            closeModal();
+
+            openPage(
+              page
+            );
+          }
+        );
+      });
+
+    document
+      .querySelector(
+        '[data-sheet-logout]'
+      )
+      ?.addEventListener(
+        'click',
+        function () {
+          closeModal();
+          confirmLogout();
+        }
+      );
+  }
+
+
+  /* =========================================================
+   * STATES
+   * ========================================================= */
+
+  function renderMaintenance(
+    page
+  ) {
+    pageContent.innerHTML = `
+      <section class="module-hero">
+
+        <span class="module-hero__icon is-warning">
+          <span class="material-symbols-rounded">
+            construction
+          </span>
+        </span>
+
+        <div>
+
+          <p class="section-kicker">
+            MAINTENANCE
+          </p>
+
+          <h2>
+            ${escapeHtml(page.label)}
+          </h2>
+
+          <p>
+            Modul sementara ditutup oleh Administrator.
+          </p>
+
+        </div>
+
+      </section>
+
+
+      <article class="content-card">
+
+        <div class="empty-state empty-state--large">
+
+          <span class="empty-state__icon is-warning">
+            <span class="material-symbols-rounded">
+              engineering
+            </span>
+          </span>
+
+          <strong>
+            Sedang Maintenance
+          </strong>
+
+          <p>
+            Data tidak dihapus. Modul dapat diaktifkan kembali
+            melalui menu Pengaturan.
+          </p>
+
+        </div>
+
+      </article>
+    `;
+  }
+
+
+  function renderComingSoon(
+    page
+  ) {
+    pageContent.innerHTML = `
+      <section class="module-hero">
+
+        <span class="module-hero__icon">
+          <span class="material-symbols-rounded">
+            ${escapeHtml(page.icon)}
+          </span>
+        </span>
+
+        <div>
+
+          <p class="section-kicker">
+            NEXT MODULE
+          </p>
+
+          <h2>
+            ${escapeHtml(page.label)}
+          </h2>
+
+          <p>
+            Modul ini masuk roadmap Fase 1 Core Payment.
+          </p>
+
+        </div>
+
+      </section>
+
+
+      <article class="content-card">
+
+        <div class="empty-state empty-state--large">
+
+          <span class="empty-state__icon">
+            <span class="material-symbols-rounded">
+              construction
+            </span>
+          </span>
+
+          <strong>
+            ${escapeHtml(page.label)} belum dibangun
+          </strong>
+
+          <p>
+            Struktur menu disiapkan dari awal,
+            tetapi business logic belum diaktifkan.
+          </p>
+
+        </div>
+
+      </article>
+    `;
+  }
+
+
+  /* =========================================================
+   * FORM HELPERS
+   * ========================================================= */
+
+  function inputField(
+    label,
+    name,
+    value,
+    required,
+    type
+  ) {
+    return `
+      <label class="field">
+
+        <span>
+          ${escapeHtml(label)}
+          ${
+            required
+              ? '<b class="required-mark">*</b>'
+              : ''
+          }
+        </span>
+
+        <input
+          class="text-input"
+          type="${type || 'text'}"
+          name="${escapeHtml(name)}"
+          value="${escapeHtml(value)}"
+          ${required ? 'required' : ''}
+        >
+
+      </label>
+    `;
+  }
+
+
+  function institutionTypeField(
+    value
+  ) {
+    const options = [
+      '',
+      'TK / PAUD',
+      'SD / MI',
+      'SMP / MTs',
+      'SMA / SMK / MA',
+      'Pesantren',
+      'Lembaga Kursus',
+      'Perguruan Tinggi',
+      'Multi Unit'
+    ];
+
+    return `
+      <label class="field">
+
+        <span>
+          Jenis Institusi
+        </span>
+
+        <select
+          class="select-input"
+          name="institution_type"
+        >
+
+          ${options
+            .map(
+              function (item) {
+                return `
+                  <option
+                    value="${escapeHtml(item)}"
+                    ${item === value ? 'selected' : ''}
+                  >
+                    ${escapeHtml(item || 'Pilih jenis')}
+                  </option>
+                `;
+              }
+            )
+            .join('')}
+
+        </select>
+
+      </label>
+    `;
+  }
+
+
+  /* =========================================================
+   * LOADING
    * ========================================================= */
 
   function createGlobalProgress() {
@@ -2189,17 +3398,10 @@ window.EduApp = (function () {
       'appProgress';
 
     progress.className =
-      'app-progress';
+      'app-progress app-progress--bar-only';
 
     progress.innerHTML = `
       <div class="app-progress__bar"></div>
-
-      <div class="app-progress__label">
-        <span class="button-spinner"></span>
-        <span data-progress-text>
-          Memuat…
-        </span>
-      </div>
     `;
 
     document.body.appendChild(
@@ -2208,37 +3410,17 @@ window.EduApp = (function () {
   }
 
 
-  function startLoading(
-    message
-  ) {
+  function startLoading() {
     activeRequestCount +=
       1;
 
-    const progress =
-      document.getElementById(
+    document
+      .getElementById(
         'appProgress'
-      );
-
-    const label =
-      progress?.querySelector(
-        '[data-progress-text]'
-      );
-
-    if (
-      label
-    ) {
-      label.textContent =
-        message ||
-        'Memuat data…';
-    }
-
-    if (
-      progress
-    ) {
-      progress.classList.add(
+      )
+      ?.classList.add(
         'is-active'
       );
-    }
 
     refreshButton.disabled =
       true;
@@ -2264,18 +3446,13 @@ window.EduApp = (function () {
       return;
     }
 
-    const progress =
-      document.getElementById(
+    document
+      .getElementById(
         'appProgress'
-      );
-
-    if (
-      progress
-    ) {
-      progress.classList.remove(
+      )
+      ?.classList.remove(
         'is-active'
       );
-    }
 
     refreshButton.disabled =
       false;
@@ -2290,34 +3467,37 @@ window.EduApp = (function () {
     message
   ) {
     pageContent.innerHTML = `
-      <section class="page-loading">
+      <section class="page-loading page-loading--clean">
 
         <div class="page-loading__head">
 
-          <span class="page-loading__spinner">
-            <span class="button-spinner"></span>
-          </span>
-
           <div>
+
             <strong>
               ${escapeHtml(message || 'Memuat data…')}
             </strong>
 
             <small>
-              Menyiapkan data terbaru dari server.
+              Mengambil data terbaru dari server.
             </small>
+
           </div>
 
         </div>
 
+
         <div class="skeleton skeleton--hero"></div>
 
+
         <div class="skeleton-grid">
+
           <div class="skeleton skeleton--card"></div>
           <div class="skeleton skeleton--card"></div>
           <div class="skeleton skeleton--card"></div>
           <div class="skeleton skeleton--card"></div>
+
         </div>
+
 
         <div class="skeleton skeleton--panel"></div>
 
@@ -2372,66 +3552,6 @@ window.EduApp = (function () {
   }
 
 
-  /* =========================================================
-   * COMMON
-   * ========================================================= */
-
-  function renderComingSoon(
-    page
-  ) {
-    pageContent.innerHTML = `
-      <section class="module-hero">
-
-        <span class="module-hero__icon">
-          <span class="material-symbols-rounded">
-            ${escapeHtml(page.icon)}
-          </span>
-        </span>
-
-        <div>
-          <p class="section-kicker">
-            NEXT MODULE
-          </p>
-
-          <h2>
-            ${escapeHtml(page.label)}
-          </h2>
-
-          <p>
-            Modul ini sudah masuk roadmap Fase 1 Core Payment
-            dan akan dibangun setelah Foundation v0.1.x dikunci.
-          </p>
-        </div>
-
-      </section>
-
-
-      <article class="content-card">
-
-        <div class="empty-state empty-state--large">
-
-          <span class="empty-state__icon">
-            <span class="material-symbols-rounded">
-              construction
-            </span>
-          </span>
-
-          <strong>
-            ${escapeHtml(page.label)} belum diaktifkan
-          </strong>
-
-          <p>
-            Struktur menu sudah tersedia agar navigasi final
-            dapat diuji sejak awal.
-          </p>
-
-        </div>
-
-      </article>
-    `;
-  }
-
-
   function renderPageError(
     error
   ) {
@@ -2481,25 +3601,28 @@ window.EduApp = (function () {
       </article>
     `;
 
-    const retry =
-      document.querySelector(
+    document
+      .querySelector(
         '[data-retry-page]'
-      );
-
-    if (
-      retry
-    ) {
-      retry.addEventListener(
+      )
+      ?.addEventListener(
         'click',
         function () {
           openPage(
-            activePage
+            activePage,
+            {
+              force:
+                true
+            }
           );
         }
       );
-    }
   }
 
+
+  /* =========================================================
+   * GLOBAL UI
+   * ========================================================= */
 
   function bindGlobalEvents() {
     refreshButton.addEventListener(
@@ -2511,12 +3634,16 @@ window.EduApp = (function () {
           return;
         }
 
-        toast(
-          'Memperbarui data…'
-        );
-
+        /*
+         * Refresh sengaja tidak menghapus tampilan lama.
+         * Hanya reload data page aktif.
+         */
         openPage(
-          activePage
+          activePage,
+          {
+            force:
+              true
+          }
         );
       }
     );
@@ -2585,7 +3712,6 @@ window.EduApp = (function () {
 
         <p>
           Session pada perangkat ini akan diakhiri.
-          Anda perlu login kembali untuk membuka workspace.
         </p>
 
         <div class="modal-actions">
@@ -2623,15 +3749,14 @@ window.EduApp = (function () {
           clearToken();
           closeModal();
 
-          startLoading(
-            'Mengakhiri session…'
-          );
+          startLoading();
 
           window.EduApi
             .request(
               'logout',
               {
-                token: token
+                token:
+                  token
               }
             )
             .catch(
@@ -2646,6 +3771,8 @@ window.EduApp = (function () {
 
                 permissions =
                   [];
+
+                pageCache.clear();
 
                 stopLoading();
                 showLogin();
@@ -2669,13 +3796,13 @@ window.EduApp = (function () {
     modalBackdrop.classList.toggle(
       'is-sheet',
       mode ===
-        'sheet'
+      'sheet'
     );
 
     modalCard.classList.toggle(
       'is-sheet',
       mode ===
-        'sheet'
+      'sheet'
     );
   }
 
@@ -2729,7 +3856,7 @@ window.EduApp = (function () {
             180
           );
         },
-        3200
+        3000
       );
   }
 
@@ -2821,8 +3948,10 @@ window.EduApp = (function () {
       {
         day:
           '2-digit',
+
         month:
           'short',
+
         year:
           'numeric'
       }
@@ -2848,7 +3977,7 @@ window.EduApp = (function () {
         navigator
           .serviceWorker
           .register(
-            './service-worker.js'
+            './service-worker.js?v=013'
           )
           .catch(
             function (error) {
@@ -2931,8 +4060,10 @@ window.rupiah = function (
     {
       style:
         'currency',
+
       currency:
         'IDR',
+
       maximumFractionDigits:
         0
     }

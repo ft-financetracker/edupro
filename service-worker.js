@@ -1,22 +1,24 @@
 /**
  * ============================================================
  * EDUCATION FINANCE & MANAGEMENT PLATFORM
- * SERVICE WORKER v0.1.2
+ * SERVICE WORKER v0.1.3
  * ============================================================
  */
 
 const CACHE_NAME =
-  'education-finance-v0-1-2';
+  'education-finance-v0-1-3';
 
 const APP_SHELL = [
   './',
   './index.html',
   './offline.html',
   './manifest.webmanifest',
-  './assets/app.css',
-  './assets/config.js',
-  './assets/api.js',
-  './assets/app.js',
+
+  './assets/app.css?v=013',
+  './assets/config.js?v=013',
+  './assets/api.js?v=013',
+  './assets/app.js?v=013',
+
   './icons/icon-192.png',
   './icons/icon-512.png'
 ];
@@ -33,14 +35,12 @@ self.addEventListener(
         )
         .then(
           function (cache) {
-
             return cache.addAll(
               APP_SHELL
             );
           }
         )
     );
-
 
     self.skipWaiting();
   }
@@ -56,12 +56,10 @@ self.addEventListener(
         .keys()
         .then(
           function (keys) {
-
             return Promise.all(
               keys
                 .filter(
                   function (key) {
-
                     return (
                       key !==
                       CACHE_NAME
@@ -70,7 +68,6 @@ self.addEventListener(
                 )
                 .map(
                   function (key) {
-
                     return caches.delete(
                       key
                     );
@@ -80,7 +77,6 @@ self.addEventListener(
           }
         )
     );
-
 
     self.clients.claim();
   }
@@ -94,24 +90,20 @@ self.addEventListener(
     const request =
       event.request;
 
-
     if (
       request.method !==
       'GET'
     ) {
-
       return;
     }
-
 
     const url =
       new URL(
         request.url
       );
 
-
     /*
-     * Jangan intercept / cache API Apps Script.
+     * API tidak pernah dicache.
      */
     if (
       url.hostname ===
@@ -119,33 +111,28 @@ self.addEventListener(
       url.hostname ===
         'script.googleusercontent.com'
     ) {
-
       return;
     }
 
-
     /*
      * Navigasi:
-     * network first + offline fallback.
+     * network-first agar index baru cepat masuk.
      */
     if (
       request.mode ===
       'navigate'
     ) {
-
       event.respondWith(
         fetch(
           request
         )
           .then(
             function (response) {
-
               return response;
             }
           )
           .catch(
             function () {
-
               return caches.match(
                 './offline.html'
               );
@@ -153,14 +140,13 @@ self.addEventListener(
           )
       );
 
-
       return;
     }
 
-
     /*
      * Asset statis:
-     * cache first, network fallback.
+     * query version memastikan versi baru
+     * tidak mengambil cache v0.1.2.
      */
     event.respondWith(
       caches
@@ -169,35 +155,29 @@ self.addEventListener(
         )
         .then(
           function (cached) {
-
             if (
               cached
             ) {
-
               return cached;
             }
-
 
             return fetch(
               request
             )
               .then(
                 function (response) {
-
                   if (
                     !response ||
-                    response.status !== 200 ||
+                    response.status !==
+                      200 ||
                     response.type ===
                       'opaque'
                   ) {
-
                     return response;
                   }
 
-
                   const copy =
                     response.clone();
-
 
                   caches
                     .open(
@@ -205,14 +185,12 @@ self.addEventListener(
                     )
                     .then(
                       function (cache) {
-
                         cache.put(
                           request,
                           copy
                         );
                       }
                     );
-
 
                   return response;
                 }
