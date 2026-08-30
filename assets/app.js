@@ -1,7 +1,7 @@
 /**
  * ============================================================
  * EDUCATION FINANCE & MANAGEMENT PLATFORM
- * FRONTEND APP v0.2.0
+ * FRONTEND APP v0.2.1
  * ============================================================
  *
  * FOCUS:
@@ -101,6 +101,305 @@ window.EduApp = (function () {
     }
   ];
 
+
+  /*
+   * =========================================================
+   * ADMISSION PRESETS
+   * =========================================================
+   *
+   * User memilih nama jalur.
+   * Code + type disusun otomatis oleh frontend.
+   */
+  const admissionPresets = [
+    {
+      group: 'Umum',
+      code: 'PSB',
+      name: 'PSB Reguler',
+      type: 'REGULAR'
+    },
+
+    {
+      group: 'Beasiswa & Sosial',
+      code: 'BEA',
+      name: 'Beasiswa Umum',
+      type: 'SCHOLARSHIP'
+    },
+
+    {
+      group: 'Beasiswa & Sosial',
+      code: 'YTM',
+      name: 'Yatim',
+      type: 'SOCIAL'
+    },
+
+    {
+      group: 'Beasiswa & Sosial',
+      code: 'PTU',
+      name: 'Piatu',
+      type: 'SOCIAL'
+    },
+
+    {
+      group: 'Beasiswa & Sosial',
+      code: 'YTP',
+      name: 'Yatim Piatu',
+      type: 'SOCIAL'
+    },
+
+    {
+      group: 'Beasiswa & Sosial',
+      code: 'DHF',
+      name: 'Dhuafa',
+      type: 'SOCIAL'
+    },
+
+    {
+      group: 'Prestasi',
+      code: 'PREST',
+      name: 'Prestasi Akademik / Nonakademik',
+      type: 'ACHIEVEMENT'
+    },
+
+    {
+      group: 'Prestasi',
+      code: 'TAHF',
+      name: 'Tahfizh / Keagamaan',
+      type: 'ACHIEVEMENT'
+    },
+
+    {
+      group: 'Lanjutan Internal',
+      code: 'PSBSMP',
+      name: 'PSB Khusus SD → SMP',
+      type: 'INTERNAL_CONTINUATION'
+    },
+
+    {
+      group: 'Lanjutan Internal',
+      code: 'PSBSMA',
+      name: 'PSB Khusus SMP → SMA',
+      type: 'INTERNAL_CONTINUATION'
+    },
+
+    {
+      group: 'Lanjutan Internal',
+      code: 'PSBKUL',
+      name: 'PSB Khusus SMA → Kuliah',
+      type: 'INTERNAL_CONTINUATION'
+    },
+
+    {
+      group: 'Lanjutan Internal',
+      code: 'INT',
+      name: 'Internal / Lanjutan Lainnya',
+      type: 'INTERNAL_CONTINUATION'
+    },
+
+    {
+      group: 'Perpindahan',
+      code: 'PIND',
+      name: 'Pindahan',
+      type: 'TRANSFER'
+    },
+
+    {
+      group: 'Perpindahan',
+      code: 'MUT',
+      name: 'Mutasi Masuk',
+      type: 'TRANSFER'
+    },
+
+    {
+      group: 'Jalur Khusus',
+      code: 'KHS',
+      name: 'PSB Khusus',
+      type: 'SPECIAL'
+    },
+
+    {
+      group: 'Jalur Khusus',
+      code: 'MITRA',
+      name: 'Mitra / Kerja Sama',
+      type: 'PARTNER'
+    },
+
+    {
+      group: 'Jalur Khusus',
+      code: 'REKOM',
+      name: 'Rekomendasi',
+      type: 'RECOMMENDATION'
+    },
+
+    {
+      group: 'Lainnya',
+      code: 'OTHER',
+      name: 'Lainnya',
+      type: 'CUSTOM'
+    }
+  ];
+
+
+  /*
+   * =========================================================
+   * CONTEXTUAL TUTORIALS
+   * =========================================================
+   */
+  const tutorials = {
+
+    dashboard: {
+      eyebrow: 'MULAI DI SINI',
+      title: 'Panduan Dashboard',
+      intro:
+        'Dashboard menunjukkan kesiapan Core Payment dan ringkasan data utama.',
+      steps: [
+        'Lengkapi Profil Institusi.',
+        'Buat dan aktifkan Periode Akademik.',
+        'Buat Jalur Pendaftaran.',
+        'Tambahkan Peserta dan Wali.',
+        'Gunakan tombol refresh hanya jika ingin memaksa update data.'
+      ],
+      note:
+        'Menu yang sudah pernah dibuka memakai cache agar perpindahan halaman tetap cepat.'
+    },
+
+    institution: {
+      eyebrow: 'MASTER DATA',
+      title: 'Panduan Profil Institusi',
+      intro:
+        'Profil Institusi adalah identitas lembaga yang dipakai seluruh modul, dokumen, dan laporan.',
+      steps: [
+        'Isi nama institusi dan jenis lembaga.',
+        'Lengkapi nama legal, alamat, kontak, dan website bila tersedia.',
+        'Simpan satu kali lalu perbarui hanya jika identitas lembaga berubah.'
+      ],
+      note:
+        'Jangan membuat institusi baru hanya karena tahun ajaran berganti.'
+    },
+
+    periods: {
+      eyebrow: 'TAHUN AKADEMIK',
+      title: 'Panduan Periode Akademik',
+      intro:
+        'Periode Akademik menentukan T.A atau tahun akademik yang menjadi konteks transaksi.',
+      steps: [
+        'Kode Periode diisi sederhana, contoh 26/27.',
+        'Nama Periode dapat ditulis T.A 2026/2027.',
+        'Sistem otomatis membuat ID seperti TA-2627.',
+        'Hanya satu periode yang ditandai aktif.'
+      ],
+      note:
+        'Kode Periode bukan ID. User mengisi 26/27; sistem yang membuat TA-2627.'
+    },
+
+    admissions: {
+      eyebrow: 'PENERIMAAN',
+      title: 'Panduan Jalur Pendaftaran',
+      intro:
+        'T.A Masuk dan Jalur Pendaftaran adalah dua data berbeda dan keduanya disimpan sampai akhir.',
+      steps: [
+        'Pilih T.A Masuk.',
+        'Pilih Jalur Pendaftaran dari daftar.',
+        'Kode jalur dan ID dibuat otomatis oleh sistem.',
+        'Tanggal pendaftaran bersifat opsional.',
+        'Satu T.A boleh memiliki banyak jalur seperti PSB, Yatim, Dhuafa, atau Lanjutan Internal.'
+      ],
+      note:
+        'Contoh: T.A 26/27 + Yatim menjadi JP-2627-YTM. User tidak perlu mengetik ID tersebut.'
+    },
+
+    participants: {
+      eyebrow: 'MASTER PESERTA',
+      title: 'Panduan Data Peserta',
+      intro:
+        'Peserta mencakup siswa, santri, mahasiswa, dan peserta program lain.',
+      steps: [
+        'Pilih T.A Masuk peserta.',
+        'Pilih Jalur Pendaftaran.',
+        'Isi nama dan data akademik.',
+        'NIS/NIM/ID resmi boleh diisi jika sudah tersedia.',
+        'Setelah tersimpan, T.A Masuk dan Jalur Pendaftaran menjadi origin history.',
+        'Buka Detail Peserta untuk menambahkan satu atau beberapa wali.'
+      ],
+      note:
+        'ID peserta dibuat otomatis, misalnya P-2627-PSB-001.'
+    },
+
+    billing: {
+      eyebrow: 'BILLING',
+      title: 'Panduan Tagihan',
+      intro:
+        'Tagihan akan dibangun dari Komponen Biaya, Tarif, target peserta, dan periode.',
+      steps: [
+        'Tentukan komponen biaya.',
+        'Tentukan tarif.',
+        'Generate tagihan kepada target.',
+        'Pembayaran nantinya dialokasikan ke tagihan.'
+      ],
+      note:
+        'Tagihan dan pembayaran adalah dua entitas berbeda.'
+    },
+
+    payments: {
+      eyebrow: 'PAYMENT',
+      title: 'Panduan Pembayaran',
+      intro:
+        'Pembayaran mencatat uang yang diterima dan harus dialokasikan ke tagihan.',
+      steps: [
+        'Pilih peserta atau tagihan.',
+        'Pilih metode pembayaran.',
+        'Validasi nominal dari backend.',
+        'Simpan transaksi dan alokasi.'
+      ],
+      note:
+        'Uang masuk saja tidak otomatis membuat semua tagihan peserta menjadi lunas.'
+    },
+
+    receivables: {
+      eyebrow: 'PIUTANG',
+      title: 'Panduan Piutang',
+      intro:
+        'Piutang menunjukkan tagihan yang belum lunas atau baru dibayar sebagian.',
+      steps: [
+        'Filter peserta atau periode.',
+        'Lihat umur piutang.',
+        'Buka detail sebelum melakukan penagihan.'
+      ],
+      note:
+        'Status piutang berasal dari sisa alokasi tagihan, bukan input manual.'
+    },
+
+    reports: {
+      eyebrow: 'REPORTING',
+      title: 'Panduan Laporan',
+      intro:
+        'Laporan menyajikan transaksi yang sudah diposting dan data operasional yang relevan.',
+      steps: [
+        'Pilih periode.',
+        'Pilih jenis laporan.',
+        'Periksa filter sebelum export.'
+      ],
+      note:
+        'Laporan tidak boleh mengubah data transaksi sumber.'
+    },
+
+    settings: {
+      eyebrow: 'SYSTEM',
+      title: 'Panduan Pengaturan',
+      intro:
+        'Pengaturan dipakai untuk identitas aplikasi dan kontrol ketersediaan modul.',
+      steps: [
+        'Atur Credit Title dan Credit Subtitle.',
+        'ACTIVE berarti menu normal.',
+        'MAINTENANCE berarti menu terlihat tetapi sementara tidak dapat digunakan.',
+        'INACTIVE berarti menu disembunyikan.'
+      ],
+      note:
+        'Menu Pengaturan sendiri dikunci tetap aktif agar Administrator tidak kehilangan akses.'
+    }
+
+  };
+
+
   let currentUser =
     null;
 
@@ -175,6 +474,11 @@ window.EduApp = (function () {
   const pageEyebrow =
     document.getElementById(
       'pageEyebrow'
+    );
+
+  const tutorialButton =
+    document.getElementById(
+      'tutorialButton'
     );
 
   const refreshButton =
@@ -2600,22 +2904,43 @@ window.EduApp = (function () {
 
 
   function openAdmissionForm(item, periods) {
-    const editing = Boolean(item);
+    const editing =
+      Boolean(
+        item
+      );
+
+    const selectedPreset =
+      findAdmissionPreset(
+        item?.admission_code
+      );
 
     modal(
       `
-        <h3>
-          ${
-            editing
-              ? 'Edit Jalur Pendaftaran'
-              : 'Tambah Jalur Pendaftaran'
-          }
-        </h3>
+        <div class="admission-form-intro">
 
-        <p>
-          Contoh kode: PSB atau BEA. Sistem otomatis membuat
-          ID seperti JP-2627-PSB.
-        </p>
+          <span class="admission-form-intro__icon">
+            <span class="material-symbols-rounded">
+              auto_awesome
+            </span>
+          </span>
+
+          <div>
+            <h3>
+              ${
+                editing
+                  ? 'Edit Jalur Pendaftaran'
+                  : 'Tambah Jalur Pendaftaran'
+              }
+            </h3>
+
+            <p>
+              Anda cukup memilih T.A dan jalur.
+              Kode serta ID dibuat otomatis oleh sistem.
+            </p>
+          </div>
+
+        </div>
+
 
         <form
           id="admissionForm"
@@ -2628,6 +2953,28 @@ window.EduApp = (function () {
             value="${escapeHtml(item?.admission_id || '')}"
           >
 
+          <input
+            id="admissionCodeHidden"
+            type="hidden"
+            name="admission_code"
+            value="${escapeHtml(item?.admission_code || '')}"
+          >
+
+          <input
+            id="admissionNameHidden"
+            type="hidden"
+            name="admission_name"
+            value="${escapeHtml(item?.admission_name || '')}"
+          >
+
+          <input
+            id="admissionTypeHidden"
+            type="hidden"
+            name="admission_type"
+            value="${escapeHtml(item?.admission_type || '')}"
+          >
+
+
           <label class="field">
 
             <span>
@@ -2636,11 +2983,13 @@ window.EduApp = (function () {
             </span>
 
             <select
+              id="admissionPeriodSelect"
               class="select-input"
               name="period_id"
               ${editing ? 'disabled' : ''}
               required
             >
+
               <option value="">
                 Pilih T.A
               </option>
@@ -2650,6 +2999,7 @@ window.EduApp = (function () {
                   return `
                     <option
                       value="${escapeHtml(period.period_id)}"
+                      data-period-code="${escapeHtml(period.period_code)}"
                       ${
                         String(item?.period_id || '') ===
                         String(period.period_id)
@@ -2658,7 +3008,6 @@ window.EduApp = (function () {
                       }
                     >
                       ${escapeHtml(period.period_name)}
-                      (${escapeHtml(period.period_id)})
                     </option>
                   `;
                 })
@@ -2666,39 +3015,121 @@ window.EduApp = (function () {
 
             </select>
 
+            <small class="field-help">
+              ID T.A dibuat otomatis oleh sistem.
+            </small>
+
           </label>
 
 
           <label class="field">
+
             <span>
-              Kode Jalur
+              Jalur Pendaftaran
               <b class="required-mark">*</b>
             </span>
 
-            <input
-              class="text-input"
-              name="admission_code"
-              value="${escapeHtml(item?.admission_code || '')}"
-              maxlength="8"
+            <select
+              id="admissionPresetSelect"
+              class="select-input"
               ${editing ? 'disabled' : ''}
               required
             >
+
+              <option value="">
+                Pilih jalur
+              </option>
+
+              ${renderAdmissionPresetOptions(
+                item?.admission_code
+              )}
+
+            </select>
+
+            <small class="field-help">
+              Tidak perlu mengisi kode jalur secara manual.
+            </small>
+
           </label>
 
 
-          ${inputField(
-            'Nama Jalur / Event',
-            'admission_name',
-            item?.admission_name || '',
-            true
-          )}
+          <div
+            id="customAdmissionFields"
+            class="custom-admission-fields is-full"
+            hidden
+          >
+
+            ${inputField(
+              'Nama Jalur Lainnya',
+              'custom_admission_name',
+              '',
+              false
+            )}
+
+            ${inputField(
+              'Kode Singkat',
+              'custom_admission_code',
+              '',
+              false
+            )}
+
+            <p class="custom-admission-note is-full">
+              Contoh: Jalur Alumni → ALUM.
+              Maksimal 8 karakter, tanpa spasi.
+            </p>
+
+          </div>
 
 
-          ${inputField(
-            'Jenis',
-            'admission_type',
-            item?.admission_type || ''
-          )}
+          <div class="admission-auto-preview is-full">
+
+            <div>
+
+              <span>
+                Jalur terpilih
+              </span>
+
+              <strong id="admissionPreviewName">
+                ${
+                  item
+                    ? escapeHtml(item.admission_name)
+                    : 'Belum dipilih'
+                }
+              </strong>
+
+            </div>
+
+            <div>
+
+              <span>
+                ID Otomatis
+              </span>
+
+              <strong id="admissionPreviewId">
+                ${
+                  item
+                    ? escapeHtml(item.admission_id)
+                    : 'Akan dibuat sistem'
+                }
+              </strong>
+
+            </div>
+
+            <span class="auto-badge">
+              <span class="material-symbols-rounded">
+                lock
+              </span>
+
+              Otomatis
+            </span>
+
+          </div>
+
+
+          <div class="form-section-label is-full">
+            Periode Pendaftaran
+            <small>Opsional</small>
+          </div>
 
 
           ${inputField(
@@ -2720,12 +3151,16 @@ window.EduApp = (function () {
 
 
           <label class="field">
-            <span>Status</span>
+
+            <span>
+              Status
+            </span>
 
             <select
               class="select-input"
               name="status"
             >
+
               <option
                 value="ACTIVE"
                 ${
@@ -2747,7 +3182,9 @@ window.EduApp = (function () {
               >
                 Tidak Aktif
               </option>
+
             </select>
+
           </label>
 
         </form>
@@ -2775,12 +3212,322 @@ window.EduApp = (function () {
       `
     );
 
+    if (
+      !editing
+    ) {
+      bindAdmissionPresetForm();
+    }
+
     document
-      .getElementById('saveAdmissionButton')
+      .getElementById(
+        'saveAdmissionButton'
+      )
       .addEventListener(
         'click',
         saveAdmission
       );
+  }
+
+
+  function renderAdmissionPresetOptions(
+    selectedCode
+  ) {
+    const groups = {};
+
+    admissionPresets.forEach(
+      function (preset) {
+        if (
+          !groups[preset.group]
+        ) {
+          groups[preset.group] =
+            [];
+        }
+
+        groups[preset.group].push(
+          preset
+        );
+      }
+    );
+
+    return Object
+      .keys(
+        groups
+      )
+      .map(
+        function (group) {
+          return `
+            <optgroup label="${escapeHtml(group)}">
+
+              ${groups[group]
+                .map(
+                  function (preset) {
+                    return `
+                      <option
+                        value="${escapeHtml(preset.code)}"
+                        ${
+                          String(selectedCode || '') ===
+                          String(preset.code)
+                            ? 'selected'
+                            : ''
+                        }
+                      >
+                        ${escapeHtml(preset.name)}
+                      </option>
+                    `;
+                  }
+                )
+                .join('')}
+
+            </optgroup>
+          `;
+        }
+      )
+      .join('');
+  }
+
+
+  function findAdmissionPreset(
+    code
+  ) {
+    return admissionPresets.find(
+      function (preset) {
+        return (
+          String(
+            preset.code
+          ) ===
+          String(
+            code ||
+            ''
+          )
+        );
+      }
+    ) || null;
+  }
+
+
+  function bindAdmissionPresetForm() {
+    const periodSelect =
+      document.getElementById(
+        'admissionPeriodSelect'
+      );
+
+    const presetSelect =
+      document.getElementById(
+        'admissionPresetSelect'
+      );
+
+    const customFields =
+      document.getElementById(
+        'customAdmissionFields'
+      );
+
+    const customName =
+      document.querySelector(
+        '[name="custom_admission_name"]'
+      );
+
+    const customCode =
+      document.querySelector(
+        '[name="custom_admission_code"]'
+      );
+
+    function syncAdmissionFields() {
+      const preset =
+        findAdmissionPreset(
+          presetSelect.value
+        );
+
+      const isCustom =
+        preset &&
+        preset.code ===
+        'OTHER';
+
+      customFields.hidden =
+        !isCustom;
+
+      if (
+        isCustom
+      ) {
+        customName.required =
+          true;
+
+        customCode.required =
+          true;
+      } else {
+        customName.required =
+          false;
+
+        customCode.required =
+          false;
+      }
+
+      const finalCode =
+        isCustom
+          ? String(
+              customCode.value ||
+              ''
+            )
+              .trim()
+              .toUpperCase()
+              .replace(
+                /[^A-Z0-9]/g,
+                ''
+              )
+              .substring(
+                0,
+                8
+              )
+          : preset
+            ? preset.code
+            : '';
+
+      const finalName =
+        isCustom
+          ? String(
+              customName.value ||
+              ''
+            ).trim()
+          : preset
+            ? preset.name
+            : '';
+
+      const finalType =
+        isCustom
+          ? 'CUSTOM'
+          : preset
+            ? preset.type
+            : '';
+
+      document
+        .getElementById(
+          'admissionCodeHidden'
+        )
+        .value =
+          finalCode;
+
+      document
+        .getElementById(
+          'admissionNameHidden'
+        )
+        .value =
+          finalName;
+
+      document
+        .getElementById(
+          'admissionTypeHidden'
+        )
+        .value =
+          finalType;
+
+      document
+        .getElementById(
+          'admissionPreviewName'
+        )
+        .textContent =
+          finalName ||
+          'Belum dipilih';
+
+      document
+        .getElementById(
+          'admissionPreviewId'
+        )
+        .textContent =
+          buildAdmissionPreviewId(
+            periodSelect,
+            finalCode
+          );
+    }
+
+    presetSelect.addEventListener(
+      'change',
+      syncAdmissionFields
+    );
+
+    periodSelect.addEventListener(
+      'change',
+      syncAdmissionFields
+    );
+
+    customName.addEventListener(
+      'input',
+      syncAdmissionFields
+    );
+
+    customCode.addEventListener(
+      'input',
+      function () {
+        customCode.value =
+          customCode.value
+            .toUpperCase()
+            .replace(
+              /[^A-Z0-9]/g,
+              ''
+            )
+            .substring(
+              0,
+              8
+            );
+
+        syncAdmissionFields();
+      }
+    );
+
+    syncAdmissionFields();
+  }
+
+
+  function buildAdmissionPreviewId(
+    periodSelect,
+    routeCode
+  ) {
+    if (
+      !periodSelect.value ||
+      !routeCode
+    ) {
+      return 'Akan dibuat sistem';
+    }
+
+    const selected =
+      periodSelect.options[
+        periodSelect.selectedIndex
+      ];
+
+    const periodCode =
+      selected?.dataset?.periodCode ||
+      '';
+
+    const digits =
+      String(
+        periodCode
+      ).replace(
+        /\D/g,
+        ''
+      );
+
+    const yearKey =
+      digits.length >=
+      4
+        ? digits.slice(
+            0,
+            4
+          )
+        : '';
+
+    if (
+      !yearKey
+    ) {
+      return (
+        'JP-…-' +
+        routeCode
+      );
+    }
+
+    return (
+      'JP-' +
+      yearKey +
+      '-' +
+      routeCode
+    );
   }
 
 
@@ -4369,6 +5116,106 @@ window.EduApp = (function () {
   }
 
 
+
+  /* =========================================================
+   * CONTEXTUAL TUTORIAL
+   * ========================================================= */
+
+  function openCurrentTutorial() {
+    const tutorial =
+      tutorials[
+        activePage
+      ] ||
+      tutorials.dashboard;
+
+    modal(
+      `
+        <div class="tutorial-sheet">
+
+          <div class="tutorial-sheet__head">
+
+            <span class="tutorial-sheet__icon">
+              <span class="material-symbols-rounded">
+                school
+              </span>
+            </span>
+
+            <div>
+
+              <p class="section-kicker">
+                ${escapeHtml(tutorial.eyebrow)}
+              </p>
+
+              <h3>
+                ${escapeHtml(tutorial.title)}
+              </h3>
+
+              <p>
+                ${escapeHtml(tutorial.intro)}
+              </p>
+
+            </div>
+
+          </div>
+
+
+          <div class="tutorial-step-list">
+
+            ${tutorial.steps
+              .map(
+                function (step, index) {
+                  return `
+                    <div class="tutorial-step">
+
+                      <span class="tutorial-step__number">
+                        ${index + 1}
+                      </span>
+
+                      <p>
+                        ${escapeHtml(step)}
+                      </p>
+
+                    </div>
+                  `;
+                }
+              )
+              .join('')}
+
+          </div>
+
+
+          <div class="tutorial-note">
+
+            <span class="material-symbols-rounded">
+              lightbulb
+            </span>
+
+            <p>
+              ${escapeHtml(tutorial.note)}
+            </p>
+
+          </div>
+
+
+          <div class="modal-actions">
+
+            <button
+              class="primary-button"
+              type="button"
+              data-modal-close
+            >
+              Mengerti
+            </button>
+
+          </div>
+
+        </div>
+      `,
+      'sheet'
+    );
+  }
+
+
   /* =========================================================
    * SETTINGS
    * ========================================================= */
@@ -5651,6 +6498,11 @@ window.EduApp = (function () {
    * ========================================================= */
 
   function bindGlobalEvents() {
+    tutorialButton?.addEventListener(
+      'click',
+      openCurrentTutorial
+    );
+
     refreshButton.addEventListener(
       'click',
       function () {
@@ -6003,7 +6855,7 @@ window.EduApp = (function () {
         navigator
           .serviceWorker
           .register(
-            './service-worker.js?v=020'
+            './service-worker.js?v=021'
           )
           .catch(
             function (error) {

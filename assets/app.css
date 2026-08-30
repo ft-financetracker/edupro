@@ -3310,3 +3310,361 @@ input:checked +
       3;
   }
 }
+
+
+/* ============================================================
+   FRONTEND v0.2.1
+   TUTORIAL + SIMPLIFIED ADMISSION FORM
+   ============================================================ */
+
+
+/* ---------- TUTORIAL BUTTON ---------- */
+
+.tutorial-button {
+  min-height: 40px;
+  padding: 0 12px;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+
+  border: 1px solid var(--border);
+  border-radius: 13px;
+
+  background: var(--surface);
+  color: var(--text);
+
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.tutorial-button .material-symbols-rounded {
+  color: var(--primary);
+
+  font-size: 19px;
+}
+
+
+/* ---------- TUTORIAL SHEET ---------- */
+
+.tutorial-sheet {
+  display: grid;
+  gap: 16px;
+}
+
+.tutorial-sheet__head {
+  display: grid;
+  grid-template-columns:
+    48px
+    minmax(0, 1fr);
+
+  gap: 12px;
+}
+
+.tutorial-sheet__icon {
+  width: 48px;
+  height: 48px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 15px;
+
+  background: var(--primary-strong);
+  color: #F5DDA5;
+}
+
+.tutorial-sheet__head h3 {
+  margin: 0;
+
+  font-size: 18px;
+}
+
+.tutorial-sheet__head p:not(.section-kicker) {
+  margin: 6px 0 0;
+
+  color: var(--text-soft);
+
+  font-size: 9px;
+  line-height: 1.65;
+}
+
+.tutorial-step-list {
+  display: grid;
+  gap: 8px;
+}
+
+.tutorial-step {
+  min-height: 48px;
+  padding: 9px 10px;
+
+  display: grid;
+  grid-template-columns:
+    30px
+    minmax(0, 1fr);
+
+  align-items: center;
+  gap: 9px;
+
+  border: 1px solid var(--border);
+  border-radius: 13px;
+
+  background: var(--surface-soft);
+}
+
+.tutorial-step__number {
+  width: 30px;
+  height: 30px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 10px;
+
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+
+  font-size: 9px;
+  font-weight: 850;
+}
+
+.tutorial-step p {
+  margin: 0;
+
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+.tutorial-note {
+  padding: 11px;
+
+  display: grid;
+  grid-template-columns:
+    28px
+    minmax(0, 1fr);
+
+  gap: 9px;
+
+  border-radius: 13px;
+
+  background: #FFF5DE;
+  color: #6D5120;
+}
+
+.tutorial-note .material-symbols-rounded {
+  font-size: 20px;
+}
+
+.tutorial-note p {
+  margin: 0;
+
+  font-size: 8px;
+  line-height: 1.6;
+}
+
+
+/* ---------- ADMISSION FORM ---------- */
+
+.admission-form-intro {
+  display: grid;
+  grid-template-columns:
+    46px
+    minmax(0, 1fr);
+
+  gap: 11px;
+
+  margin-bottom: 15px;
+}
+
+.admission-form-intro__icon {
+  width: 46px;
+  height: 46px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 15px;
+
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+}
+
+.admission-form-intro h3 {
+  margin: 0;
+
+  font-size: 18px;
+}
+
+.admission-form-intro p {
+  margin: 5px 0 0;
+
+  color: var(--text-soft);
+
+  font-size: 9px;
+  line-height: 1.6;
+}
+
+.field-help {
+  display: block;
+
+  margin-top: 5px;
+
+  color: var(--text-soft);
+
+  font-size: 7px;
+}
+
+.admission-auto-preview {
+  position: relative;
+
+  min-height: 82px;
+  padding: 12px;
+
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, 1fr);
+
+  gap: 10px;
+
+  border: 1px dashed #D4C09B;
+  border-radius: 14px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #FFF9ED,
+      #FCF4E4
+    );
+}
+
+.admission-auto-preview > div {
+  min-width: 0;
+
+  display: grid;
+  align-content: center;
+  gap: 4px;
+}
+
+.admission-auto-preview span:not(.material-symbols-rounded) {
+  color: var(--text-soft);
+
+  font-size: 7px;
+}
+
+.admission-auto-preview strong {
+  overflow: hidden;
+
+  color: var(--primary-strong);
+
+  font-size: 10px;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auto-badge {
+  position: absolute;
+  top: -9px;
+  right: 10px;
+
+  min-height: 24px;
+  padding: 0 7px;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  border-radius: 999px;
+
+  background: var(--primary-strong);
+  color: #F7DFA7 !important;
+
+  font-size: 7px !important;
+  font-weight: 800;
+}
+
+.auto-badge .material-symbols-rounded {
+  font-size: 13px;
+}
+
+.form-section-label {
+  margin-top: 4px;
+  padding-top: 4px;
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  color: var(--text);
+
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.form-section-label small {
+  padding: 3px 6px;
+
+  border-radius: 999px;
+
+  background: var(--surface-soft);
+  color: var(--text-soft);
+
+  font-size: 7px;
+  font-weight: 700;
+}
+
+.custom-admission-fields {
+  display: grid;
+  grid-template-columns:
+    1fr
+    1fr;
+
+  gap: 10px;
+
+  padding: 11px;
+
+  border: 1px solid var(--border);
+  border-radius: 14px;
+
+  background: var(--surface-soft);
+}
+
+.custom-admission-fields[hidden] {
+  display: none;
+}
+
+.custom-admission-note {
+  margin: 0;
+
+  color: var(--text-soft);
+
+  font-size: 7px;
+  line-height: 1.5;
+}
+
+
+/* ---------- MOBILE ---------- */
+
+@media (max-width: 900px) {
+
+  .tutorial-button {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+
+    justify-content: center;
+  }
+
+  .tutorial-button__label {
+    display: none;
+  }
+
+  .admission-auto-preview {
+    grid-template-columns: 1fr;
+  }
+
+  .custom-admission-fields {
+    grid-template-columns: 1fr;
+  }
+}
