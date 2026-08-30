@@ -1,7 +1,7 @@
 /**
  * ============================================================
  * EDUCATION FINANCE & MANAGEMENT PLATFORM
- * FRONTEND APP v0.2.1
+ * FRONTEND APP v0.3.0
  * ============================================================
  *
  * FOCUS:
@@ -239,6 +239,143 @@ window.EduApp = (function () {
   ];
 
 
+
+  /*
+   * =========================================================
+   * ENTRY PROGRAM / LEVEL CATALOG
+   * =========================================================
+   *
+   * Ini dipilih ADMIN saat membuat Jalur Pendaftaran.
+   * Wali tidak mengetik Program/Tingkat secara bebas.
+   */
+  const entryProgramCatalog = [
+    {
+      code: 'PAUD',
+      name: 'PAUD / Kelompok Bermain',
+      levels: [
+        {
+          code: 'AWAL',
+          name: 'Tingkat Awal'
+        }
+      ]
+    },
+
+    {
+      code: 'TK',
+      name: 'TK / RA',
+      levels: [
+        {
+          code: 'A',
+          name: 'Kelompok A'
+        },
+
+        {
+          code: 'B',
+          name: 'Kelompok B'
+        }
+      ]
+    },
+
+    {
+      code: 'SD',
+      name: 'SD / MI',
+      levels: [
+        { code: 'K1', name: 'Kelas 1' },
+        { code: 'K2', name: 'Kelas 2' },
+        { code: 'K3', name: 'Kelas 3' },
+        { code: 'K4', name: 'Kelas 4' },
+        { code: 'K5', name: 'Kelas 5' },
+        { code: 'K6', name: 'Kelas 6' }
+      ]
+    },
+
+    {
+      code: 'SMP',
+      name: 'SMP / MTs',
+      levels: [
+        { code: 'K7', name: 'Kelas 7' },
+        { code: 'K8', name: 'Kelas 8' },
+        { code: 'K9', name: 'Kelas 9' }
+      ]
+    },
+
+    {
+      code: 'SMA',
+      name: 'SMA / SMK / MA',
+      levels: [
+        { code: 'K10', name: 'Kelas 10' },
+        { code: 'K11', name: 'Kelas 11' },
+        { code: 'K12', name: 'Kelas 12' }
+      ]
+    },
+
+    {
+      code: 'DIP',
+      name: 'Diploma',
+      levels: [
+        { code: 'S1', name: 'Semester 1' },
+        { code: 'S2', name: 'Semester 2' },
+        { code: 'S3', name: 'Semester 3' },
+        { code: 'S4', name: 'Semester 4' },
+        { code: 'S5', name: 'Semester 5' },
+        { code: 'S6', name: 'Semester 6' },
+        { code: 'S7', name: 'Semester 7' },
+        { code: 'S8', name: 'Semester 8' }
+      ]
+    },
+
+    {
+      code: 'S1',
+      name: 'Sarjana / S1',
+      levels: [
+        { code: 'S1', name: 'Semester 1' },
+        { code: 'S2', name: 'Semester 2' },
+        { code: 'S3', name: 'Semester 3' },
+        { code: 'S4', name: 'Semester 4' },
+        { code: 'S5', name: 'Semester 5' },
+        { code: 'S6', name: 'Semester 6' },
+        { code: 'S7', name: 'Semester 7' },
+        { code: 'S8', name: 'Semester 8' }
+      ]
+    },
+
+    {
+      code: 'S2',
+      name: 'Magister / S2',
+      levels: [
+        { code: 'S1', name: 'Semester 1' },
+        { code: 'S2', name: 'Semester 2' },
+        { code: 'S3', name: 'Semester 3' },
+        { code: 'S4', name: 'Semester 4' }
+      ]
+    },
+
+    {
+      code: 'S3',
+      name: 'Doktor / S3',
+      levels: [
+        { code: 'S1', name: 'Semester 1' },
+        { code: 'S2', name: 'Semester 2' },
+        { code: 'S3', name: 'Semester 3' },
+        { code: 'S4', name: 'Semester 4' },
+        { code: 'S5', name: 'Semester 5' },
+        { code: 'S6', name: 'Semester 6' }
+      ]
+    },
+
+    {
+      code: 'KURSUS',
+      name: 'Kursus / Program Khusus',
+      levels: [
+        {
+          code: 'AWAL',
+          name: 'Level Awal'
+        }
+      ]
+    }
+  ];
+
+
   /*
    * =========================================================
    * CONTEXTUAL TUTORIALS
@@ -295,33 +432,32 @@ window.EduApp = (function () {
       eyebrow: 'PENERIMAAN',
       title: 'Panduan Jalur Pendaftaran',
       intro:
-        'T.A Masuk dan Jalur Pendaftaran adalah dua data berbeda dan keduanya disimpan sampai akhir.',
+        'Pendaftaran sekarang memisahkan Jalur, Pendaftar, Target Masuk, Berkas, dan Timeline.',
       steps: [
-        'Pilih T.A Masuk.',
-        'Pilih Jalur Pendaftaran dari daftar.',
-        'Kode jalur dan ID dibuat otomatis oleh sistem.',
-        'Tanggal pendaftaran bersifat opsional.',
-        'Satu T.A boleh memiliki banyak jalur seperti PSB, Yatim, Dhuafa, atau Lanjutan Internal.'
+        'Admin membuat Jalur Pendaftaran untuk suatu T.A.',
+        'Admin menentukan satu atau beberapa Target Masuk: Program/Jenjang + Tingkat Awal.',
+        'Form pendaftaran memakai 3 langkah: Data Santri → Data Wali → Berkas & Review.',
+        'Foto wajib sebelum form dikirim. Berkas lain dapat dilengkapi sebelum Verifikasi Berkas selesai.',
+        'Peserta baru masuk Master Peserta setelah tahap Aktif.'
       ],
       note:
-        'Contoh: T.A 26/27 + Yatim menjadi JP-2627-YTM. User tidak perlu mengetik ID tersebut.'
+        'Program, Tingkat, Kelas/Rombel, dan tanggal efektif tidak dibebankan kepada wali sebagai isian bebas.'
     },
 
     participants: {
       eyebrow: 'MASTER PESERTA',
       title: 'Panduan Data Peserta',
       intro:
-        'Peserta mencakup siswa, santri, mahasiswa, dan peserta program lain.',
+        'Master Peserta berisi peserta yang sudah mencapai tahap Aktif.',
       steps: [
-        'Pilih T.A Masuk peserta.',
-        'Pilih Jalur Pendaftaran.',
-        'Isi nama dan data akademik.',
-        'NIS/NIM/ID resmi boleh diisi jika sudah tersedia.',
-        'Setelah tersimpan, T.A Masuk dan Jalur Pendaftaran menjadi origin history.',
-        'Buka Detail Peserta untuk menambahkan satu atau beberapa wali.'
+        'Data awal dibuat melalui menu Pendaftaran.',
+        'Program dan Tingkat berasal dari Target Jalur Pendaftaran.',
+        'Kelas/Rombel ditentukan belakangan melalui proses penempatan.',
+        'Tanggal masuk efektif berasal dari jalur/keputusan admin.',
+        'Wali ikut dipindahkan otomatis saat pendaftar diaktifkan.'
       ],
       note:
-        'ID peserta dibuat otomatis, misalnya P-2627-PSB-001.'
+        'Jangan membuat peserta aktif untuk pendaftar yang masih berada dalam proses seleksi.'
     },
 
     billing: {
@@ -399,6 +535,13 @@ window.EduApp = (function () {
 
   };
 
+
+  let admissionUiState = {
+    tab: 'applications'
+  };
+
+  let applicationWizardState =
+    null;
 
   let currentUser =
     null;
@@ -2084,6 +2227,56 @@ window.EduApp = (function () {
 
         </form>
 
+        <div class="institution-logo-card">
+
+          <span class="institution-logo-card__icon">
+            <span class="material-symbols-rounded">
+              image
+            </span>
+          </span>
+
+          <div>
+
+            <strong>
+              Logo Institusi
+            </strong>
+
+            <small>
+              Dipakai pada PDF formulir dan dokumen resmi.
+            </small>
+
+            <span class="institution-logo-card__file">
+              ${
+                data.logo_file_name
+                  ? escapeHtml(data.logo_file_name)
+                  : 'Belum ada logo'
+              }
+            </span>
+
+          </div>
+
+          <input
+            id="institutionLogoFile"
+            type="file"
+            accept="image/*"
+            hidden
+          >
+
+          <button
+            id="chooseInstitutionLogoButton"
+            class="secondary-button"
+            type="button"
+          >
+            <span class="material-symbols-rounded">
+              upload
+            </span>
+
+            Upload Logo
+          </button>
+
+        </div>
+
+
         <div class="page-actions">
 
           <button
@@ -2110,6 +2303,91 @@ window.EduApp = (function () {
       .addEventListener(
         'click',
         saveInstitution
+      );
+
+    const logoInput =
+      document.getElementById(
+        'institutionLogoFile'
+      );
+
+    document
+      .getElementById(
+        'chooseInstitutionLogoButton'
+      )
+      ?.addEventListener(
+        'click',
+        function () {
+          logoInput.click();
+        }
+      );
+
+    logoInput
+      ?.addEventListener(
+        'change',
+        function () {
+          const file =
+            logoInput.files?.[0];
+
+          if (
+            file
+          ) {
+            uploadInstitutionLogo(
+              file
+            );
+          }
+        }
+      );
+  }
+
+
+  function uploadInstitutionLogo(
+    file
+  ) {
+    if (
+      !navigator.onLine
+    ) {
+      toast(
+        'Upload logo membutuhkan koneksi internet.'
+      );
+
+      return;
+    }
+
+    startLoading();
+
+    window.EduUpload
+      .send(
+        'upload.institution_logo',
+        {
+          token:
+            getToken()
+        },
+        file
+      )
+      .then(
+        function () {
+          invalidatePageCache(
+            'institution'
+          );
+
+          toast(
+            'Logo institusi berhasil disimpan.'
+          );
+
+          loadInstitution(
+            true
+          );
+        }
+      )
+      .catch(
+        function (error) {
+          toast(
+            error.message
+          );
+        }
+      )
+      .finally(
+        stopLoading
       );
   }
 
@@ -2684,16 +2962,31 @@ window.EduApp = (function () {
    * ADMISSIONS / JALUR PENDAFTARAN
    * ========================================================= */
 
-  function loadAdmissions(force) {
-    const cached = getPageCache('admissions');
+  function loadAdmissions(
+    force
+  ) {
+    const cached =
+      getPageCache(
+        'admissions'
+      );
 
-    if (cached && !force) {
-      renderAdmissions(cached);
+    if (
+      cached &&
+      !force
+    ) {
+      renderAdmissions(
+        cached
+      );
+
       return;
     }
 
-    if (!cached) {
-      showPageLoading('Membuka Pendaftaran…');
+    if (
+      !cached
+    ) {
+      showPageLoading(
+        'Membuka Pendaftaran…'
+      );
     }
 
     startLoading();
@@ -2701,39 +2994,75 @@ window.EduApp = (function () {
     Promise.all([
       window.EduApi.request(
         'admission.list',
-        { token: getToken() }
+        {
+          token:
+            getToken()
+        }
       ),
+
       window.EduApi.request(
         'period.list',
-        { token: getToken() }
+        {
+          token:
+            getToken()
+        }
+      ),
+
+      window.EduApi.request(
+        'application.list',
+        {
+          token:
+            getToken()
+        }
       )
     ])
-      .then(function (responses) {
-        const data = {
-          admissions: Array.isArray(responses[0].data)
-            ? responses[0].data
-            : [],
-          periods: Array.isArray(responses[1].data)
-            ? responses[1].data
-            : []
-        };
+      .then(
+        function (responses) {
+          const data = {
+            admissions:
+              Array.isArray(
+                responses[0].data
+              )
+                ? responses[0].data
+                : [],
 
-        setPageCache(
-          'admissions',
-          data
-        );
+            periods:
+              Array.isArray(
+                responses[1].data
+              )
+                ? responses[1].data
+                : [],
 
-        renderAdmissions(data);
-      })
-      .catch(renderPageError)
-      .finally(stopLoading);
+            applications:
+              Array.isArray(
+                responses[2].data
+              )
+                ? responses[2].data
+                : []
+          };
+
+          setPageCache(
+            'admissions',
+            data
+          );
+
+          renderAdmissions(
+            data
+          );
+        }
+      )
+      .catch(
+        renderPageError
+      )
+      .finally(
+        stopLoading
+      );
   }
 
 
-  function renderAdmissions(data) {
-    const admissions = data.admissions || [];
-    const periods = data.periods || [];
-
+  function renderAdmissions(
+    data
+  ) {
     pageContent.innerHTML = `
       <section class="module-hero">
 
@@ -2744,101 +3073,549 @@ window.EduApp = (function () {
         </span>
 
         <div>
+
           <p class="section-kicker">
-            PENERIMAAN PESERTA
+            ADMISSION WORKFLOW
           </p>
 
           <h2>
-            Jalur Pendaftaran
+            Pendaftaran
           </h2>
 
           <p>
-            Satu T.A dapat memiliki beberapa jalur masuk:
-            PSB, BEA, Internal, Pindahan, dan lainnya.
+            Jalur → Form 1-2-3 → Verifikasi → Wawancara →
+            Keputusan → Daftar Ulang → Aktif.
           </p>
+
         </div>
 
         <button
-          id="newAdmissionButton"
+          id="newApplicationButton"
           class="primary-button module-hero__action"
           type="button"
         >
           <span class="material-symbols-rounded">
-            add
+            person_add
           </span>
 
-          Tambah Jalur
+          Pendaftaran Baru
         </button>
 
       </section>
 
 
+      <div class="module-tabs">
+
+        <button
+          class="module-tab ${
+            admissionUiState.tab ===
+            'applications'
+              ? 'is-active'
+              : ''
+          }"
+          type="button"
+          data-admission-tab="applications"
+        >
+          <span class="material-symbols-rounded">
+            assignment_ind
+          </span>
+
+          Pendaftar
+
+          <span class="module-tab__count">
+            ${numberFormat(data.applications.length)}
+          </span>
+        </button>
+
+        <button
+          class="module-tab ${
+            admissionUiState.tab ===
+            'routes'
+              ? 'is-active'
+              : ''
+          }"
+          type="button"
+          data-admission-tab="routes"
+        >
+          <span class="material-symbols-rounded">
+            account_tree
+          </span>
+
+          Jalur & Target
+
+          <span class="module-tab__count">
+            ${numberFormat(data.admissions.length)}
+          </span>
+        </button>
+
+      </div>
+
+
+      <div
+        id="admissionOfflineDraftArea"
+        class="offline-draft-area"
+      ></div>
+
+
+      <div
+        id="admissionTabContent"
+      ></div>
+    `;
+
+    document
+      .getElementById(
+        'newApplicationButton'
+      )
+      .addEventListener(
+        'click',
+        function () {
+          openApplicationWizard(
+            data,
+            null
+          );
+        }
+      );
+
+    document
+      .querySelectorAll(
+        '[data-admission-tab]'
+      )
+      .forEach(
+        function (button) {
+          button.addEventListener(
+            'click',
+            function () {
+              admissionUiState.tab =
+                button.dataset.admissionTab;
+
+              renderAdmissions(
+                data
+              );
+            }
+          );
+        }
+      );
+
+    if (
+      admissionUiState.tab ===
+      'routes'
+    ) {
+      renderAdmissionRoutesTab(
+        data
+      );
+
+    } else {
+      renderApplicationsTab(
+        data
+      );
+    }
+
+    renderOfflineApplicationDrafts(
+      data
+    );
+  }
+
+
+  /* =========================================================
+   * TAB: PENDAFTAR
+   * ========================================================= */
+
+  function renderApplicationsTab(
+    data
+  ) {
+    const container =
+      document.getElementById(
+        'admissionTabContent'
+      );
+
+    const rows =
+      data.applications ||
+      [];
+
+    container.innerHTML = `
       <article class="content-card">
 
+        <div class="application-toolbar">
+
+          <div class="participant-search">
+
+            <span class="material-symbols-rounded">
+              search
+            </span>
+
+            <input
+              id="applicationSearch"
+              type="search"
+              placeholder="Cari nama atau ID pendaftaran…"
+            >
+
+          </div>
+
+          <select
+            id="applicationStageFilter"
+            class="select-input"
+          >
+            <option value="">
+              Semua Tahap
+            </option>
+
+            ${[
+              'Pendaftaran',
+              'Verifikasi Berkas',
+              'Proses Administrasi',
+              'Proses Wawancara',
+              'Tes / Seleksi',
+              'Keputusan',
+              'Daftar Ulang',
+              'Aktif'
+            ]
+              .map(
+                function (label) {
+                  return `
+                    <option value="${escapeHtml(label)}">
+                      ${escapeHtml(label)}
+                    </option>
+                  `;
+                }
+              )
+              .join('')}
+          </select>
+
+          <select
+            id="applicationRouteFilter"
+            class="select-input"
+          >
+            <option value="">
+              Semua Jalur
+            </option>
+
+            ${data.admissions
+              .map(
+                function (admission) {
+                  return `
+                    <option value="${escapeHtml(admission.admission_id)}">
+                      ${escapeHtml(admission.admission_name)}
+                    </option>
+                  `;
+                }
+              )
+              .join('')}
+          </select>
+
+        </div>
+
+        <div
+          id="applicationList"
+          class="application-list"
+        ></div>
+
+      </article>
+    `;
+
+    const redraw =
+      function () {
+        renderApplicationRows(
+          rows,
+          data
+        );
+      };
+
+    [
+      'applicationSearch',
+      'applicationStageFilter',
+      'applicationRouteFilter'
+    ].forEach(
+      function (id) {
+        const element =
+          document.getElementById(
+            id
+          );
+
+        element.addEventListener(
+          'input',
+          redraw
+        );
+
+        element.addEventListener(
+          'change',
+          redraw
+        );
+      }
+    );
+
+    redraw();
+  }
+
+
+  function renderApplicationRows(
+    rows,
+    data
+  ) {
+    const root =
+      document.getElementById(
+        'applicationList'
+      );
+
+    const search =
+      String(
+        document
+          .getElementById(
+            'applicationSearch'
+          )
+          ?.value ||
+        ''
+      )
+        .trim()
+        .toLowerCase();
+
+    const stage =
+      document
+        .getElementById(
+          'applicationStageFilter'
+        )
+        ?.value ||
+      '';
+
+    const route =
+      document
+        .getElementById(
+          'applicationRouteFilter'
+        )
+        ?.value ||
+      '';
+
+    const filtered =
+      rows.filter(
+        function (row) {
+          if (
+            stage &&
+            row.stage_label !==
+            stage
+          ) {
+            return false;
+          }
+
+          if (
+            route &&
+            row.admission_id !==
+            route
+          ) {
+            return false;
+          }
+
+          if (
+            search
+          ) {
+            const text = [
+              row.application_id,
+              row.full_name,
+              row.admission_name,
+              row.program_name,
+              row.level_name
+            ]
+              .join(
+                ' '
+              )
+              .toLowerCase();
+
+            if (
+              !text.includes(
+                search
+              )
+            ) {
+              return false;
+            }
+          }
+
+          return true;
+        }
+      );
+
+    if (
+      !filtered.length
+    ) {
+      root.innerHTML = `
+        <div class="empty-state empty-state--large">
+
+          <span class="empty-state__icon">
+            <span class="material-symbols-rounded">
+              assignment_ind
+            </span>
+          </span>
+
+          <strong>
+            Belum ada pendaftar
+          </strong>
+
+          <p>
+            Gunakan tombol Pendaftaran Baru untuk membuka form
+            Data Santri → Data Wali → Berkas.
+          </p>
+
+        </div>
+      `;
+
+      return;
+    }
+
+    root.innerHTML =
+      filtered
+        .map(
+          function (row) {
+            const documentComplete =
+              Boolean(
+                row.document_status &&
+                row.document_status.complete
+              );
+
+            return `
+              <button
+                class="application-row"
+                type="button"
+                data-application-id="${escapeHtml(row.application_id)}"
+              >
+
+                <span class="application-row__avatar">
+                  ${escapeHtml(initials(row.full_name))}
+                </span>
+
+                <span class="application-row__main">
+
+                  <strong>
+                    ${escapeHtml(row.full_name)}
+                  </strong>
+
+                  <small>
+                    ${escapeHtml(row.application_id)}
+                  </small>
+
+                </span>
+
+                <span class="application-row__target">
+
+                  <strong>
+                    ${escapeHtml(row.program_name || '—')}
+                  </strong>
+
+                  <small>
+                    ${escapeHtml(row.level_name || '—')}
+                    •
+                    ${escapeHtml(row.admission_code || '—')}
+                  </small>
+
+                </span>
+
+                <span class="application-row__stage">
+
+                  <strong>
+                    ${escapeHtml(row.stage_label)}
+                  </strong>
+
+                  <small class="${
+                    documentComplete
+                      ? 'is-complete'
+                      : 'is-incomplete'
+                  }">
+                    ${
+                      documentComplete
+                        ? 'Berkas lengkap'
+                        : 'Berkas belum lengkap'
+                    }
+                  </small>
+
+                </span>
+
+                <span class="material-symbols-rounded">
+                  chevron_right
+                </span>
+
+              </button>
+            `;
+          }
+        )
+        .join('');
+
+    root
+      .querySelectorAll(
+        '[data-application-id]'
+      )
+      .forEach(
+        function (button) {
+          button.addEventListener(
+            'click',
+            function () {
+              openApplicationDetail(
+                button.dataset.applicationId,
+                data
+              );
+            }
+          );
+        }
+      );
+  }
+
+
+  /* =========================================================
+   * TAB: JALUR & TARGET
+   * ========================================================= */
+
+  function renderAdmissionRoutesTab(
+    data
+  ) {
+    const container =
+      document.getElementById(
+        'admissionTabContent'
+      );
+
+    container.innerHTML = `
+      <article class="content-card">
+
+        <div class="card-head">
+
+          <div>
+
+            <p class="section-kicker">
+              KONFIGURASI
+            </p>
+
+            <h3>
+              Jalur dan Target Masuk
+            </h3>
+
+            <p>
+              Program dan Tingkat ditentukan sekali oleh Admin.
+              Wali cukup memilih target yang tersedia.
+            </p>
+
+          </div>
+
+          <button
+            id="newAdmissionRouteButton"
+            class="secondary-button"
+            type="button"
+          >
+            <span class="material-symbols-rounded">
+              add
+            </span>
+
+            Tambah Jalur
+          </button>
+
+        </div>
+
         ${
-          admissions.length
+          data.admissions.length
             ? `
               <div class="admission-grid">
 
-                ${admissions
-                  .map(function (item) {
-                    return `
-                      <button
-                        class="admission-card"
-                        type="button"
-                        data-edit-admission="${escapeHtml(item.admission_id)}"
-                      >
-
-                        <div class="admission-card__top">
-
-                          <span class="admission-card__code">
-                            ${escapeHtml(item.admission_id)}
-                          </span>
-
-                          <span
-                            class="state-badge ${
-                              String(item.status).toUpperCase() === 'ACTIVE'
-                                ? 'is-ready'
-                                : 'is-pending'
-                            }"
-                          >
-                            ${escapeHtml(item.status)}
-                          </span>
-
-                        </div>
-
-                        <strong>
-                          ${escapeHtml(item.admission_name)}
-                        </strong>
-
-                        <span class="admission-card__period">
-                          T.A ${escapeHtml(item.period_name || item.period_code)}
-                        </span>
-
-                        <div class="admission-card__meta">
-
-                          <span>
-                            <span class="material-symbols-rounded">
-                              badge
-                            </span>
-
-                            ${escapeHtml(item.admission_code)}
-                          </span>
-
-                          <span>
-                            <span class="material-symbols-rounded">
-                              groups
-                            </span>
-
-                            ${numberFormat(item.participant_count || 0)}
-                            peserta
-                          </span>
-
-                        </div>
-
-                      </button>
-                    `;
-                  })
+                ${data.admissions
+                  .map(
+                    function (item) {
+                      return admissionRouteCard(
+                        item
+                      );
+                    }
+                  )
                   .join('')}
 
               </div>
@@ -2848,7 +3625,7 @@ window.EduApp = (function () {
 
                 <span class="empty-state__icon">
                   <span class="material-symbols-rounded">
-                    how_to_reg
+                    account_tree
                   </span>
                 </span>
 
@@ -2857,8 +3634,7 @@ window.EduApp = (function () {
                 </strong>
 
                 <p>
-                  Contoh: PSB 26/27 dan BEA 26/27 tetap masuk
-                  ke T.A yang sama tetapi memiliki jalur berbeda.
+                  Buat jalur lalu tentukan target masuknya.
                 </p>
 
               </div>
@@ -2869,50 +3645,216 @@ window.EduApp = (function () {
     `;
 
     document
-      .getElementById('newAdmissionButton')
+      .getElementById(
+        'newAdmissionRouteButton'
+      )
       .addEventListener(
         'click',
         function () {
-          openAdmissionForm(
+          openAdmissionRouteForm(
             null,
-            periods
+            data.periods
           );
         }
       );
 
     document
-      .querySelectorAll('[data-edit-admission]')
-      .forEach(function (button) {
-        button.addEventListener(
-          'click',
-          function () {
-            const item = admissions.find(function (row) {
-              return (
-                row.admission_id ===
-                button.dataset.editAdmission
-              );
-            });
+      .querySelectorAll(
+        '[data-edit-admission-route]'
+      )
+      .forEach(
+        function (button) {
+          button.addEventListener(
+            'click',
+            function () {
+              const row =
+                data.admissions.find(
+                  function (item) {
+                    return (
+                      item.admission_id ===
+                      button.dataset.editAdmissionRoute
+                    );
+                  }
+                );
 
-            openAdmissionForm(
-              item || null,
-              periods
-            );
-          }
-        );
-      });
+              openAdmissionRouteForm(
+                row ||
+                null,
+                data.periods
+              );
+            }
+          );
+        }
+      );
+
+    document
+      .querySelectorAll(
+        '[data-apply-route]'
+      )
+      .forEach(
+        function (button) {
+          button.addEventListener(
+            'click',
+            function (event) {
+              event.stopPropagation();
+
+              openApplicationWizard(
+                data,
+                {
+                  admission_id:
+                    button.dataset.applyRoute
+                }
+              );
+            }
+          );
+        }
+      );
   }
 
 
-  function openAdmissionForm(item, periods) {
+  function admissionRouteCard(
+    item
+  ) {
+    const targets =
+      Array.isArray(
+        item.targets
+      )
+        ? item.targets
+        : [];
+
+    return `
+      <article class="admission-card admission-card--route">
+
+        <button
+          class="admission-card__edit"
+          type="button"
+          data-edit-admission-route="${escapeHtml(item.admission_id)}"
+          aria-label="Edit jalur"
+        >
+          <span class="material-symbols-rounded">
+            edit
+          </span>
+        </button>
+
+        <div class="admission-card__top">
+
+          <span class="admission-card__code">
+            ${escapeHtml(item.admission_id)}
+          </span>
+
+          <span
+            class="state-badge ${
+              String(item.status).toUpperCase() ===
+              'ACTIVE'
+                ? 'is-ready'
+                : 'is-pending'
+            }"
+          >
+            ${escapeHtml(item.status)}
+          </span>
+
+        </div>
+
+        <strong>
+          ${escapeHtml(item.admission_name)}
+        </strong>
+
+        <span class="admission-card__period">
+          ${escapeHtml(item.period_name || item.period_code)}
+        </span>
+
+        <div class="route-target-list">
+
+          ${
+            targets.length
+              ? targets
+                  .map(
+                    function (target) {
+                      return `
+                        <span class="route-target-chip">
+
+                          <span class="material-symbols-rounded">
+                            school
+                          </span>
+
+                          ${escapeHtml(target.program_name)}
+                          •
+                          ${escapeHtml(target.level_name)}
+
+                        </span>
+                      `;
+                    }
+                  )
+                  .join('')
+              : `
+                <span class="route-target-chip is-empty">
+                  Target masuk belum diatur
+                </span>
+              `
+          }
+
+        </div>
+
+        <div class="admission-card__footer">
+
+          <span>
+            ${numberFormat(item.application_count || 0)}
+            pendaftar
+          </span>
+
+          <button
+            class="route-apply-button"
+            type="button"
+            data-apply-route="${escapeHtml(item.admission_id)}"
+            ${targets.length ? '' : 'disabled'}
+          >
+            Daftarkan
+          </button>
+
+        </div>
+
+      </article>
+    `;
+  }
+
+
+  function openAdmissionRouteForm(
+    item,
+    periods
+  ) {
     const editing =
       Boolean(
         item
       );
 
-    const selectedPreset =
-      findAdmissionPreset(
-        item?.admission_code
-      );
+    const targets =
+      editing &&
+      Array.isArray(
+        item.targets
+      ) &&
+      item.targets.length
+        ? item.targets
+        : [
+            {
+              target_id:
+                '',
+
+              program_code:
+                'SMP',
+
+              program_name:
+                'SMP / MTs',
+
+              level_code:
+                'K7',
+
+              level_name:
+                'Kelas 7',
+
+              default_entry_date:
+                ''
+            }
+          ];
 
     modal(
       `
@@ -2920,11 +3862,12 @@ window.EduApp = (function () {
 
           <span class="admission-form-intro__icon">
             <span class="material-symbols-rounded">
-              auto_awesome
+              account_tree
             </span>
           </span>
 
           <div>
+
             <h3>
               ${
                 editing
@@ -2934,16 +3877,16 @@ window.EduApp = (function () {
             </h3>
 
             <p>
-              Anda cukup memilih T.A dan jalur.
-              Kode serta ID dibuat otomatis oleh sistem.
+              Tentukan jalur dan satu atau beberapa target masuk.
             </p>
+
           </div>
 
         </div>
 
 
         <form
-          id="admissionForm"
+          id="admissionRouteForm"
           class="form-grid"
         >
 
@@ -2995,29 +3938,27 @@ window.EduApp = (function () {
               </option>
 
               ${periods
-                .map(function (period) {
-                  return `
-                    <option
-                      value="${escapeHtml(period.period_id)}"
-                      data-period-code="${escapeHtml(period.period_code)}"
-                      ${
-                        String(item?.period_id || '') ===
-                        String(period.period_id)
-                          ? 'selected'
-                          : ''
-                      }
-                    >
-                      ${escapeHtml(period.period_name)}
-                    </option>
-                  `;
-                })
+                .map(
+                  function (period) {
+                    return `
+                      <option
+                        value="${escapeHtml(period.period_id)}"
+                        data-period-code="${escapeHtml(period.period_code)}"
+                        ${
+                          String(item?.period_id || '') ===
+                          String(period.period_id)
+                            ? 'selected'
+                            : ''
+                        }
+                      >
+                        ${escapeHtml(period.period_name)}
+                      </option>
+                    `;
+                  }
+                )
                 .join('')}
 
             </select>
-
-            <small class="field-help">
-              ID T.A dibuat otomatis oleh sistem.
-            </small>
 
           </label>
 
@@ -3046,10 +3987,6 @@ window.EduApp = (function () {
 
             </select>
 
-            <small class="field-help">
-              Tidak perlu mengisi kode jalur secara manual.
-            </small>
-
           </label>
 
 
@@ -3073,11 +4010,6 @@ window.EduApp = (function () {
               false
             )}
 
-            <p class="custom-admission-note is-full">
-              Contoh: Jalur Alumni → ALUM.
-              Maksimal 8 karakter, tanpa spasi.
-            </p>
-
           </div>
 
 
@@ -3086,15 +4018,11 @@ window.EduApp = (function () {
             <div>
 
               <span>
-                Jalur terpilih
+                Jalur
               </span>
 
               <strong id="admissionPreviewName">
-                ${
-                  item
-                    ? escapeHtml(item.admission_name)
-                    : 'Belum dipilih'
-                }
+                ${escapeHtml(item?.admission_name || 'Belum dipilih')}
               </strong>
 
             </div>
@@ -3106,29 +4034,71 @@ window.EduApp = (function () {
               </span>
 
               <strong id="admissionPreviewId">
-                ${
-                  item
-                    ? escapeHtml(item.admission_id)
-                    : 'Akan dibuat sistem'
-                }
+                ${escapeHtml(item?.admission_id || 'Akan dibuat sistem')}
               </strong>
 
             </div>
 
             <span class="auto-badge">
+
               <span class="material-symbols-rounded">
                 lock
               </span>
 
               Otomatis
+
             </span>
+
+          </div>
+
+
+          <div class="target-editor-section is-full">
+
+            <div class="target-editor-head">
+
+              <div>
+
+                <span class="form-section-label">
+                  Target Masuk
+                </span>
+
+                <small>
+                  Program + Tingkat ditentukan Admin
+                </small>
+
+              </div>
+
+              <button
+                id="addAdmissionTargetButton"
+                class="secondary-button compact-button"
+                type="button"
+              >
+                <span class="material-symbols-rounded">
+                  add
+                </span>
+
+                Tambah Target
+              </button>
+
+            </div>
+
+            <div
+              id="admissionTargetEditor"
+              class="target-editor-list"
+            >
+              ${renderAdmissionTargetEditorRows(
+                targets
+              )}
+            </div>
 
           </div>
 
 
           <div class="form-section-label is-full">
             Periode Pendaftaran
-            <small>Opsional</small>
+            <small>
+              Opsional
+            </small>
           </div>
 
 
@@ -3164,7 +4134,8 @@ window.EduApp = (function () {
               <option
                 value="ACTIVE"
                 ${
-                  String(item?.status || 'ACTIVE') === 'ACTIVE'
+                  String(item?.status || 'ACTIVE') ===
+                  'ACTIVE'
                     ? 'selected'
                     : ''
                 }
@@ -3175,7 +4146,8 @@ window.EduApp = (function () {
               <option
                 value="INACTIVE"
                 ${
-                  String(item?.status || '') === 'INACTIVE'
+                  String(item?.status || '') ===
+                  'INACTIVE'
                     ? 'selected'
                     : ''
                 }
@@ -3201,15 +4173,16 @@ window.EduApp = (function () {
           </button>
 
           <button
-            id="saveAdmissionButton"
+            id="saveAdmissionRouteButton"
             class="primary-button"
             type="button"
           >
-            Simpan
+            Simpan Jalur
           </button>
 
         </div>
-      `
+      `,
+      'sheet'
     );
 
     if (
@@ -3218,13 +4191,24 @@ window.EduApp = (function () {
       bindAdmissionPresetForm();
     }
 
+    bindAdmissionTargetEditor();
+
     document
       .getElementById(
-        'saveAdmissionButton'
+        'addAdmissionTargetButton'
       )
       .addEventListener(
         'click',
-        saveAdmission
+        addAdmissionTargetRow
+      );
+
+    document
+      .getElementById(
+        'saveAdmissionRouteButton'
+      )
+      .addEventListener(
+        'click',
+        saveAdmissionRoute
       );
   }
 
@@ -3232,7 +4216,8 @@ window.EduApp = (function () {
   function renderAdmissionPresetOptions(
     selectedCode
   ) {
-    const groups = {};
+    const groups =
+      {};
 
     admissionPresets.forEach(
       function (preset) {
@@ -3289,19 +4274,22 @@ window.EduApp = (function () {
   function findAdmissionPreset(
     code
   ) {
-    return admissionPresets.find(
-      function (preset) {
-        return (
-          String(
-            preset.code
-          ) ===
-          String(
-            code ||
-            ''
-          )
-        );
-      }
-    ) || null;
+    return (
+      admissionPresets.find(
+        function (preset) {
+          return (
+            String(
+              preset.code
+            ) ===
+            String(
+              code ||
+              ''
+            )
+          );
+        }
+      ) ||
+      null
+    );
   }
 
 
@@ -3353,6 +4341,7 @@ window.EduApp = (function () {
 
         customCode.required =
           true;
+
       } else {
         customName.required =
           false;
@@ -3531,22 +4520,378 @@ window.EduApp = (function () {
   }
 
 
-  function saveAdmission() {
-    const form = document.getElementById(
-      'admissionForm'
+  /* =========================================================
+   * TARGET EDITOR
+   * ========================================================= */
+
+  function renderAdmissionTargetEditorRows(
+    targets
+  ) {
+    return targets
+      .map(
+        function (target, index) {
+          return admissionTargetEditorRow(
+            target,
+            index
+          );
+        }
+      )
+      .join('');
+  }
+
+
+  function admissionTargetEditorRow(
+    target,
+    index
+  ) {
+    return `
+      <div
+        class="target-editor-row"
+        data-target-row
+      >
+
+        <input
+          type="hidden"
+          data-target-id
+          value="${escapeHtml(target.target_id || '')}"
+        >
+
+        <label class="field">
+
+          <span>
+            Program / Jenjang
+          </span>
+
+          <select
+            class="select-input"
+            data-target-program
+            required
+          >
+
+            ${entryProgramCatalog
+              .map(
+                function (program) {
+                  return `
+                    <option
+                      value="${escapeHtml(program.code)}"
+                      ${
+                        String(target.program_code || '') ===
+                        String(program.code)
+                          ? 'selected'
+                          : ''
+                      }
+                    >
+                      ${escapeHtml(program.name)}
+                    </option>
+                  `;
+                }
+              )
+              .join('')}
+
+          </select>
+
+        </label>
+
+
+        <label class="field">
+
+          <span>
+            Tingkat Masuk
+          </span>
+
+          <select
+            class="select-input"
+            data-target-level
+            data-selected-level="${escapeHtml(target.level_code || '')}"
+            required
+          ></select>
+
+        </label>
+
+
+        <label class="field">
+
+          <span>
+            Tanggal Masuk Default
+          </span>
+
+          <input
+            class="text-input"
+            type="date"
+            data-target-date
+            value="${escapeHtml(dateInput(target.default_entry_date))}"
+          >
+
+        </label>
+
+
+        <button
+          class="target-remove-button"
+          type="button"
+          data-remove-target
+          aria-label="Hapus target"
+        >
+          <span class="material-symbols-rounded">
+            delete
+          </span>
+        </button>
+
+      </div>
+    `;
+  }
+
+
+  function bindAdmissionTargetEditor() {
+    document
+      .querySelectorAll(
+        '[data-target-row]'
+      )
+      .forEach(
+        bindAdmissionTargetRow
+      );
+  }
+
+
+  function bindAdmissionTargetRow(
+    row
+  ) {
+    const programSelect =
+      row.querySelector(
+        '[data-target-program]'
+      );
+
+    const levelSelect =
+      row.querySelector(
+        '[data-target-level]'
+      );
+
+    const removeButton =
+      row.querySelector(
+        '[data-remove-target]'
+      );
+
+    function renderLevels() {
+      const program =
+        entryProgramCatalog.find(
+          function (item) {
+            return (
+              item.code ===
+              programSelect.value
+            );
+          }
+        );
+
+      const selectedLevel =
+        levelSelect.dataset.selectedLevel ||
+        levelSelect.value ||
+        '';
+
+      levelSelect.innerHTML =
+        (
+          program
+            ? program.levels
+            : []
+        )
+          .map(
+            function (level) {
+              return `
+                <option
+                  value="${escapeHtml(level.code)}"
+                  ${
+                    String(selectedLevel) ===
+                    String(level.code)
+                      ? 'selected'
+                      : ''
+                  }
+                >
+                  ${escapeHtml(level.name)}
+                </option>
+              `;
+            }
+          )
+          .join('');
+
+      delete levelSelect.dataset.selectedLevel;
+    }
+
+    programSelect.addEventListener(
+      'change',
+      renderLevels
     );
 
-    if (!form.reportValidity()) {
+    removeButton.addEventListener(
+      'click',
+      function () {
+        const rows =
+          document.querySelectorAll(
+            '[data-target-row]'
+          );
+
+        if (
+          rows.length <=
+          1
+        ) {
+          toast(
+            'Minimal satu target masuk harus tersedia.'
+          );
+
+          return;
+        }
+
+        row.remove();
+      }
+    );
+
+    renderLevels();
+  }
+
+
+  function addAdmissionTargetRow() {
+    const editor =
+      document.getElementById(
+        'admissionTargetEditor'
+      );
+
+    editor.insertAdjacentHTML(
+      'beforeend',
+      admissionTargetEditorRow(
+        {
+          target_id:
+            '',
+
+          program_code:
+            'SMP',
+
+          level_code:
+            'K7',
+
+          default_entry_date:
+            ''
+        },
+        editor.children.length
+      )
+    );
+
+    bindAdmissionTargetRow(
+      editor.lastElementChild
+    );
+  }
+
+
+  function collectAdmissionTargets() {
+    return Array
+      .from(
+        document.querySelectorAll(
+          '[data-target-row]'
+        )
+      )
+      .map(
+        function (row) {
+          const programCode =
+            row.querySelector(
+              '[data-target-program]'
+            ).value;
+
+          const levelCode =
+            row.querySelector(
+              '[data-target-level]'
+            ).value;
+
+          const program =
+            entryProgramCatalog.find(
+              function (item) {
+                return (
+                  item.code ===
+                  programCode
+                );
+              }
+            );
+
+          const level =
+            program
+              ? program.levels.find(
+                  function (item) {
+                    return (
+                      item.code ===
+                      levelCode
+                    );
+                  }
+                )
+              : null;
+
+          return {
+            target_id:
+              row.querySelector(
+                '[data-target-id]'
+              ).value,
+
+            program_code:
+              programCode,
+
+            program_name:
+              program
+                ? program.name
+                : programCode,
+
+            level_code:
+              levelCode,
+
+            level_name:
+              level
+                ? level.name
+                : levelCode,
+
+            default_entry_date:
+              row.querySelector(
+                '[data-target-date]'
+              ).value,
+
+            status:
+              'ACTIVE'
+          };
+        }
+      );
+  }
+
+
+  function saveAdmissionRoute() {
+    const form =
+      document.getElementById(
+        'admissionRouteForm'
+      );
+
+    if (
+      !form.reportValidity()
+    ) {
       return;
     }
 
-    const payload = Object.fromEntries(
-      new FormData(form).entries()
-    );
+    const payload =
+      Object.fromEntries(
+        new FormData(
+          form
+        ).entries()
+      );
 
-    const button = document.getElementById(
-      'saveAdmissionButton'
-    );
+    const existingId =
+      form.querySelector(
+        '[name="admission_id"]'
+      ).value;
+
+    if (
+      existingId
+    ) {
+      payload.admission_id =
+        existingId;
+    }
+
+    payload.targets =
+      collectAdmissionTargets();
+
+    const button =
+      document.getElementById(
+        'saveAdmissionRouteButton'
+      );
 
     setButtonLoading(
       button,
@@ -3560,35 +4905,2838 @@ window.EduApp = (function () {
       .request(
         'admission.save',
         {
-          token: getToken(),
-          payload: payload
+          token:
+            getToken(),
+
+          payload:
+            payload
         }
       )
-      .then(function () {
-        closeModal();
+      .then(
+        function () {
+          closeModal();
 
-        invalidatePageCache('admissions');
-        invalidatePageCache('participants');
+          invalidatePageCache(
+            'admissions'
+          );
 
-        toast(
-          'Jalur pendaftaran berhasil disimpan.'
-        );
+          invalidatePageCache(
+            'participants'
+          );
 
-        loadAdmissions(true);
-      })
-      .catch(function (error) {
-        toast(error.message);
-      })
-      .finally(function () {
-        setButtonLoading(
-          button,
-          false
-        );
+          toast(
+            'Jalur dan target masuk berhasil disimpan.'
+          );
 
-        stopLoading();
-      });
+          admissionUiState.tab =
+            'routes';
+
+          loadAdmissions(
+            true
+          );
+        }
+      )
+      .catch(
+        function (error) {
+          toast(
+            error.message
+          );
+        }
+      )
+      .finally(
+        function () {
+          setButtonLoading(
+            button,
+            false
+          );
+
+          stopLoading();
+        }
+      );
   }
 
+
+  /* =========================================================
+   * APPLICATION WIZARD 1 → 2 → 3
+   * ========================================================= */
+
+  function openApplicationWizard(
+    moduleData,
+    options
+  ) {
+    const opts =
+      options ||
+      {};
+
+    const draftId =
+      opts.draft_id ||
+      (
+        'LOCAL-' +
+        Date.now()
+      );
+
+    const preselectedAdmission =
+      opts.admission_id ||
+      '';
+
+    applicationWizardState = {
+      draft_id:
+        draftId,
+
+      application_id:
+        opts.application_id ||
+        '',
+
+      step:
+        Number(
+          opts.step ||
+          1
+        ),
+
+      module_data:
+        moduleData,
+
+      data:
+        Object.assign(
+          {
+            admission_id:
+              preselectedAdmission,
+
+            target_id:
+              '',
+
+            source_type:
+              'ADMIN',
+
+            channel:
+              navigator.onLine
+                ? 'ONLINE'
+                : 'OFFLINE_SYNC',
+
+            full_name:
+              '',
+
+            nik:
+              '',
+
+            official_number:
+              '',
+
+            gender:
+              '',
+
+            birth_place:
+              '',
+
+            birth_date:
+              '',
+
+            previous_institution:
+              '',
+
+            previous_level:
+              '',
+
+            previous_graduation_year:
+              '',
+
+            guardians: [
+              {
+                guardian_name:
+                  '',
+
+                relationship:
+                  '',
+
+                is_primary:
+                  true,
+
+                phone:
+                  '',
+
+                email:
+                  '',
+
+                occupation:
+                  '',
+
+                address:
+                  ''
+              }
+            ]
+          },
+          opts.data ||
+          {}
+        ),
+
+      submit_requested:
+        Boolean(
+          opts.submit_requested
+        ),
+
+      pending_file_promises:
+        [],
+
+      server_documents:
+        Array.isArray(
+          opts.server_documents
+        )
+          ? opts.server_documents
+          : [],
+
+      was_submitted:
+        Boolean(
+          opts.was_submitted
+        )
+    };
+
+    renderApplicationWizard();
+  }
+
+
+  function renderApplicationWizard() {
+    const state =
+      applicationWizardState;
+
+    const data =
+      state.module_data;
+
+    modal(
+      `
+        <div class="application-wizard">
+
+          ${renderApplicationWizardStepper(
+            state.step
+          )}
+
+          <div
+            id="applicationWizardBody"
+            class="application-wizard__body"
+          >
+            ${
+              state.step ===
+              1
+                ? renderApplicationStepOne(
+                    state,
+                    data
+                  )
+                : state.step ===
+                    2
+                  ? renderApplicationStepTwo(
+                      state
+                    )
+                  : renderApplicationStepThree(
+                      state,
+                      data
+                    )
+            }
+          </div>
+
+
+          <div class="wizard-actions">
+
+            ${
+              state.step >
+              1
+                ? `
+                  <button
+                    id="wizardBackButton"
+                    class="secondary-button"
+                    type="button"
+                  >
+                    <span class="material-symbols-rounded">
+                      arrow_back
+                    </span>
+
+                    Kembali
+                  </button>
+                `
+                : `
+                  <button
+                    class="secondary-button"
+                    type="button"
+                    data-modal-close
+                  >
+                    Batal
+                  </button>
+                `
+            }
+
+            <button
+              id="wizardSaveDraftButton"
+              class="secondary-button"
+              type="button"
+            >
+              <span class="material-symbols-rounded">
+                save
+              </span>
+
+              Simpan Draft
+            </button>
+
+            <button
+              id="wizardNextButton"
+              class="primary-button"
+              type="button"
+            >
+              ${
+                state.step <
+                3
+                  ? `
+                    Lanjut
+
+                    <span class="material-symbols-rounded">
+                      arrow_forward
+                    </span>
+                  `
+                  : state.was_submitted
+                    ? `
+                      <span class="material-symbols-rounded">
+                        save
+                      </span>
+
+                      Simpan Perubahan
+                    `
+                    : `
+                      <span class="material-symbols-rounded">
+                        send
+                      </span>
+
+                      Kirim Pendaftaran
+                    `
+              }
+            </button>
+
+          </div>
+
+        </div>
+      `,
+      'sheet'
+    );
+
+    bindApplicationWizardStep();
+
+    document
+      .getElementById(
+        'wizardBackButton'
+      )
+      ?.addEventListener(
+        'click',
+        function () {
+          saveCurrentWizardStepToState();
+
+          applicationWizardState.step =
+            Math.max(
+              1,
+              applicationWizardState.step -
+              1
+            );
+
+          saveApplicationDraftOffline();
+
+          renderApplicationWizard();
+        }
+      );
+
+    document
+      .getElementById(
+        'wizardSaveDraftButton'
+      )
+      .addEventListener(
+        'click',
+        function () {
+          saveCurrentWizardStepToState();
+
+          saveApplicationWizard(
+            false
+          );
+        }
+      );
+
+    document
+      .getElementById(
+        'wizardNextButton'
+      )
+      .addEventListener(
+        'click',
+        function () {
+          if (
+            !validateCurrentWizardStep()
+          ) {
+            return;
+          }
+
+          saveCurrentWizardStepToState();
+
+          if (
+            applicationWizardState.step <
+            3
+          ) {
+            applicationWizardState.step +=
+              1;
+
+            saveApplicationDraftOffline();
+
+            renderApplicationWizard();
+
+            return;
+          }
+
+          saveApplicationWizard(
+            true
+          );
+        }
+      );
+  }
+
+
+  function renderApplicationWizardStepper(
+    activeStep
+  ) {
+    const steps = [
+      {
+        number:
+          1,
+
+        title:
+          'Data Santri',
+
+        subtitle:
+          'Identitas & asal pendidikan'
+      },
+
+      {
+        number:
+          2,
+
+        title:
+          'Data Wali',
+
+        subtitle:
+          'Kontak orang tua / wali'
+      },
+
+      {
+        number:
+          3,
+
+        title:
+          'Berkas & Review',
+
+        subtitle:
+          'Dokumen dan konfirmasi'
+      }
+    ];
+
+    return `
+      <div class="wizard-stepper">
+
+        ${steps
+          .map(
+            function (step) {
+              const state =
+                step.number <
+                activeStep
+                  ? 'is-done'
+                  : step.number ===
+                      activeStep
+                    ? 'is-active'
+                    : '';
+
+              return `
+                <div class="wizard-step ${state}">
+
+                  <span class="wizard-step__number">
+                    ${
+                      step.number <
+                      activeStep
+                        ? `
+                          <span class="material-symbols-rounded">
+                            check
+                          </span>
+                        `
+                        : step.number
+                    }
+                  </span>
+
+                  <span>
+
+                    <strong>
+                      ${escapeHtml(step.title)}
+                    </strong>
+
+                    <small>
+                      ${escapeHtml(step.subtitle)}
+                    </small>
+
+                  </span>
+
+                </div>
+              `;
+            }
+          )
+          .join('')}
+
+      </div>
+    `;
+  }
+
+
+  function renderApplicationStepOne(
+    state,
+    moduleData
+  ) {
+    const selectedAdmission =
+      moduleData.admissions.find(
+        function (item) {
+          return (
+            item.admission_id ===
+            state.data.admission_id
+          );
+        }
+      );
+
+    return `
+      <div class="wizard-section-head">
+
+        <p class="section-kicker">
+          LANGKAH 1
+        </p>
+
+        <h3>
+          Data Santri / Peserta
+        </h3>
+
+        <p>
+          Program dan Tingkat tidak diketik bebas.
+          Nilainya mengikuti Target Jalur yang dipilih.
+        </p>
+
+      </div>
+
+
+      <form
+        id="applicationStepForm"
+        class="form-grid"
+      >
+
+        <label class="field">
+
+          <span>
+            Jalur Pendaftaran
+            <b class="required-mark">*</b>
+          </span>
+
+          <select
+            id="wizardAdmissionSelect"
+            class="select-input"
+            name="admission_id"
+            ${
+              state.application_id
+                ? 'disabled'
+                : ''
+            }
+            required
+          >
+
+            <option value="">
+              Pilih jalur
+            </option>
+
+            ${moduleData.admissions
+              .filter(
+                function (admission) {
+                  return (
+                    String(
+                      admission.status
+                    ) ===
+                    'ACTIVE' &&
+                    Array.isArray(
+                      admission.targets
+                    ) &&
+                    admission.targets.length
+                  );
+                }
+              )
+              .map(
+                function (admission) {
+                  return `
+                    <option
+                      value="${escapeHtml(admission.admission_id)}"
+                      ${
+                        state.data.admission_id ===
+                        admission.admission_id
+                          ? 'selected'
+                          : ''
+                      }
+                    >
+                      ${escapeHtml(admission.admission_name)}
+                      •
+                      ${escapeHtml(admission.period_name)}
+                    </option>
+                  `;
+                }
+              )
+              .join('')}
+
+          </select>
+
+        </label>
+
+
+        <label class="field">
+
+          <span>
+            Target Masuk
+            <b class="required-mark">*</b>
+          </span>
+
+          <select
+            id="wizardTargetSelect"
+            class="select-input"
+            name="target_id"
+            ${
+              state.application_id
+                ? 'disabled'
+                : ''
+            }
+            required
+          >
+            ${renderWizardTargetOptions(
+              selectedAdmission,
+              state.data.target_id
+            )}
+          </select>
+
+        </label>
+
+
+        <div
+          id="wizardTargetPreview"
+          class="wizard-target-preview is-full"
+        >
+          ${renderWizardTargetPreview(
+            selectedAdmission,
+            state.data.target_id
+          )}
+        </div>
+
+
+        ${inputField(
+          'Nama Lengkap',
+          'full_name',
+          state.data.full_name ||
+          '',
+          true
+        )}
+
+
+        ${inputField(
+          'NIK',
+          'nik',
+          state.data.nik ||
+          ''
+        )}
+
+
+        ${inputField(
+          'NIS / NISN / NIM',
+          'official_number',
+          state.data.official_number ||
+          ''
+        )}
+
+
+        <label class="field">
+
+          <span>
+            Jenis Kelamin
+          </span>
+
+          <select
+            class="select-input"
+            name="gender"
+          >
+
+            <option value="">
+              Pilih
+            </option>
+
+            <option
+              value="L"
+              ${
+                state.data.gender ===
+                'L'
+                  ? 'selected'
+                  : ''
+              }
+            >
+              Laki-laki
+            </option>
+
+            <option
+              value="P"
+              ${
+                state.data.gender ===
+                'P'
+                  ? 'selected'
+                  : ''
+              }
+            >
+              Perempuan
+            </option>
+
+          </select>
+
+        </label>
+
+
+        ${inputField(
+          'Tempat Lahir',
+          'birth_place',
+          state.data.birth_place ||
+          ''
+        )}
+
+
+        ${inputField(
+          'Tanggal Lahir',
+          'birth_date',
+          state.data.birth_date ||
+          '',
+          false,
+          'date'
+        )}
+
+
+        <div class="form-section-label is-full">
+          Pendidikan Sebelumnya
+          <small>
+            Data pendukung
+          </small>
+        </div>
+
+
+        ${inputField(
+          'Asal Sekolah / Institusi',
+          'previous_institution',
+          state.data.previous_institution ||
+          ''
+        )}
+
+
+        ${inputField(
+          'Jenjang / Tingkat Terakhir',
+          'previous_level',
+          state.data.previous_level ||
+          ''
+        )}
+
+
+        ${inputField(
+          'Tahun Lulus / Keluar',
+          'previous_graduation_year',
+          state.data.previous_graduation_year ||
+          ''
+        )}
+
+
+        <label class="field is-full file-field">
+
+          <span>
+            Foto Santri / Peserta
+            <b class="required-mark">*</b>
+          </span>
+
+          <input
+            id="wizardPhotoInput"
+            class="file-input"
+            type="file"
+            accept="image/*"
+            data-wizard-file="PHOTO"
+          >
+
+          <small>
+            Foto disimpan bersama draft.
+            Wajib tersedia sebelum pendaftaran dikirim.
+          </small>
+
+          <span
+            class="file-state"
+            data-file-state="PHOTO"
+          >
+            Belum memilih file
+          </span>
+
+        </label>
+
+      </form>
+    `;
+  }
+
+
+  function renderWizardTargetOptions(
+    admission,
+    selectedTargetId
+  ) {
+    if (
+      !admission
+    ) {
+      return `
+        <option value="">
+          Pilih jalur terlebih dahulu
+        </option>
+      `;
+    }
+
+    return `
+      <option value="">
+        Pilih target
+      </option>
+
+      ${(admission.targets || [])
+        .filter(
+          function (target) {
+            return (
+              String(
+                target.status
+              ) ===
+              'ACTIVE'
+            );
+          }
+        )
+        .map(
+          function (target) {
+            return `
+              <option
+                value="${escapeHtml(target.target_id)}"
+                ${
+                  selectedTargetId ===
+                  target.target_id
+                    ? 'selected'
+                    : ''
+                }
+              >
+                ${escapeHtml(target.program_name)}
+                •
+                ${escapeHtml(target.level_name)}
+              </option>
+            `;
+          }
+        )
+        .join('')}
+    `;
+  }
+
+
+  function renderWizardTargetPreview(
+    admission,
+    targetId
+  ) {
+    const target =
+      admission
+        ? (
+            admission.targets ||
+            []
+          ).find(
+            function (item) {
+              return (
+                item.target_id ===
+                targetId
+              );
+            }
+          )
+        : null;
+
+    if (
+      !target
+    ) {
+      return `
+        <span class="material-symbols-rounded">
+          info
+        </span>
+
+        <div>
+          <strong>
+            Program & Tingkat otomatis
+          </strong>
+
+          <small>
+            Pilih target masuk.
+          </small>
+        </div>
+      `;
+    }
+
+    return `
+      <span class="material-symbols-rounded">
+        auto_awesome
+      </span>
+
+      <div>
+
+        <strong>
+          ${escapeHtml(target.program_name)}
+          •
+          ${escapeHtml(target.level_name)}
+        </strong>
+
+        <small>
+          ${
+            target.default_entry_date
+              ? 'Tanggal masuk default: ' +
+                escapeHtml(
+                  dateText(
+                    target.default_entry_date
+                  )
+                )
+              : 'Tanggal masuk efektif ditentukan sistem/admin saat aktivasi.'
+          }
+        </small>
+
+      </div>
+    `;
+  }
+
+
+  function renderApplicationStepTwo(
+    state
+  ) {
+    const guardians =
+      state.data.guardians &&
+      state.data.guardians.length
+        ? state.data.guardians
+        : [
+            {
+              is_primary:
+                true
+            }
+          ];
+
+    const primary =
+      guardians[0] ||
+      {};
+
+    const secondary =
+      guardians[1] ||
+      {};
+
+    return `
+      <div class="wizard-section-head">
+
+        <p class="section-kicker">
+          LANGKAH 2
+        </p>
+
+        <h3>
+          Data Orang Tua / Wali
+        </h3>
+
+        <p>
+          Minimal satu kontak utama harus tersedia.
+        </p>
+
+      </div>
+
+
+      <form
+        id="applicationStepForm"
+        class="form-grid"
+      >
+
+        <div class="guardian-form-card is-full">
+
+          <div class="guardian-form-card__head">
+
+            <span class="material-symbols-rounded">
+              contact_phone
+            </span>
+
+            <div>
+
+              <strong>
+                Wali Utama
+              </strong>
+
+              <small>
+                Digunakan untuk komunikasi utama.
+              </small>
+
+            </div>
+
+          </div>
+
+
+          <div class="form-grid">
+
+            ${inputField(
+              'Nama Wali',
+              'guardian_primary_name',
+              primary.guardian_name ||
+              '',
+              true
+            )}
+
+            ${inputField(
+              'Hubungan',
+              'guardian_primary_relationship',
+              primary.relationship ||
+              '',
+              true
+            )}
+
+            ${inputField(
+              'No. HP / WhatsApp',
+              'guardian_primary_phone',
+              primary.phone ||
+              '',
+              true
+            )}
+
+            ${inputField(
+              'Email',
+              'guardian_primary_email',
+              primary.email ||
+              '',
+              false,
+              'email'
+            )}
+
+            ${inputField(
+              'Pekerjaan',
+              'guardian_primary_occupation',
+              primary.occupation ||
+              ''
+            )}
+
+            <label class="field is-full">
+
+              <span>
+                Alamat
+              </span>
+
+              <textarea
+                class="textarea-input"
+                name="guardian_primary_address"
+              >${escapeHtml(primary.address || '')}</textarea>
+
+            </label>
+
+          </div>
+
+        </div>
+
+
+        <label class="toggle-field is-full">
+
+          <input
+            id="secondaryGuardianToggle"
+            type="checkbox"
+            ${
+              guardians.length >
+              1
+                ? 'checked'
+                : ''
+            }
+          >
+
+          <span class="toggle-field__control"></span>
+
+          <span>
+
+            <strong>
+              Tambahkan wali kedua
+            </strong>
+
+            <small>
+              Opsional: ayah, ibu, atau wali lainnya.
+            </small>
+
+          </span>
+
+        </label>
+
+
+        <div
+          id="secondaryGuardianFields"
+          class="guardian-form-card is-full"
+          ${
+            guardians.length >
+            1
+              ? ''
+              : 'hidden'
+          }
+        >
+
+          <div class="guardian-form-card__head">
+
+            <span class="material-symbols-rounded">
+              person
+            </span>
+
+            <div>
+
+              <strong>
+                Wali Tambahan
+              </strong>
+
+              <small>
+                Data kontak kedua.
+              </small>
+
+            </div>
+
+          </div>
+
+
+          <div class="form-grid">
+
+            ${inputField(
+              'Nama Wali',
+              'guardian_secondary_name',
+              secondary.guardian_name ||
+              ''
+            )}
+
+            ${inputField(
+              'Hubungan',
+              'guardian_secondary_relationship',
+              secondary.relationship ||
+              ''
+            )}
+
+            ${inputField(
+              'No. HP / WhatsApp',
+              'guardian_secondary_phone',
+              secondary.phone ||
+              ''
+            )}
+
+            ${inputField(
+              'Email',
+              'guardian_secondary_email',
+              secondary.email ||
+              '',
+              false,
+              'email'
+            )}
+
+            ${inputField(
+              'Pekerjaan',
+              'guardian_secondary_occupation',
+              secondary.occupation ||
+              ''
+            )}
+
+            <label class="field is-full">
+
+              <span>
+                Alamat
+              </span>
+
+              <textarea
+                class="textarea-input"
+                name="guardian_secondary_address"
+              >${escapeHtml(secondary.address || '')}</textarea>
+
+            </label>
+
+          </div>
+
+        </div>
+
+      </form>
+    `;
+  }
+
+
+  function renderApplicationStepThree(
+    state,
+    moduleData
+  ) {
+    const admission =
+      moduleData.admissions.find(
+        function (item) {
+          return (
+            item.admission_id ===
+            state.data.admission_id
+          );
+        }
+      );
+
+    const target =
+      admission
+        ? (
+            admission.targets ||
+            []
+          ).find(
+            function (item) {
+              return (
+                item.target_id ===
+                state.data.target_id
+              );
+            }
+          )
+        : null;
+
+    const socialRoute =
+      admission &&
+      (
+        admission.admission_type ===
+          'SOCIAL' ||
+        admission.admission_type ===
+          'SCHOLARSHIP'
+      );
+
+    return `
+      <div class="wizard-section-head">
+
+        <p class="section-kicker">
+          LANGKAH 3
+        </p>
+
+        <h3>
+          Berkas & Review
+        </h3>
+
+        <p>
+          Berkas dapat diunggah sejak awal.
+          Jika belum lengkap, pendaftaran tetap bisa masuk,
+          tetapi tidak dapat melewati Verifikasi Berkas.
+        </p>
+
+      </div>
+
+
+      <div class="document-upload-grid">
+
+        ${applicationDocumentField(
+          'KK',
+          'Kartu Keluarga',
+          'PDF / JPG / PNG'
+        )}
+
+        ${applicationDocumentField(
+          'AKTA',
+          'Akta Kelahiran',
+          'PDF / JPG / PNG'
+        )}
+
+        ${applicationDocumentField(
+          'PREV_EDU',
+          'Berkas Jenjang Sebelumnya',
+          'Ijazah / SKL / Rapor / Transkrip'
+        )}
+
+        ${applicationDocumentField(
+          'KTP_GUARDIAN',
+          'KTP Orang Tua / Wali',
+          'Opsional'
+        )}
+
+        ${
+          socialRoute
+            ? applicationDocumentField(
+                'SOCIAL_PROOF',
+                'Berkas Pendukung Jalur Sosial / Beasiswa',
+                'Surat yatim / dhuafa / rekomendasi / bukti lain'
+              )
+            : ''
+        }
+
+        ${applicationDocumentField(
+          'OTHER',
+          'Berkas Lainnya',
+          'Opsional'
+        )}
+
+      </div>
+
+
+      <div class="application-review-card">
+
+        <p class="section-kicker">
+          REVIEW
+        </p>
+
+        <div class="application-review-grid">
+
+          ${reviewItem(
+            'Nama',
+            state.data.full_name
+          )}
+
+          ${reviewItem(
+            'Jalur',
+            admission
+              ? admission.admission_name
+              : '—'
+          )}
+
+          ${reviewItem(
+            'Program',
+            target
+              ? target.program_name
+              : '—'
+          )}
+
+          ${reviewItem(
+            'Tingkat Masuk',
+            target
+              ? target.level_name
+              : '—'
+          )}
+
+          ${reviewItem(
+            'Wali Utama',
+            state.data.guardians?.[0]?.guardian_name ||
+            '—'
+          )}
+
+          ${reviewItem(
+            'Kontak',
+            state.data.guardians?.[0]?.phone ||
+            '—'
+          )}
+
+        </div>
+
+      </div>
+
+
+      <label class="declaration-check">
+
+        <input
+          id="wizardDeclaration"
+          type="checkbox"
+          required
+        >
+
+        <span>
+
+          <strong>
+            Data sudah diperiksa
+          </strong>
+
+          <small>
+            Data dapat diperbaiki kemudian oleh Admin.
+            Origin T.A, Jalur, dan Target tetap dikunci.
+          </small>
+
+        </span>
+
+      </label>
+    `;
+  }
+
+
+  function applicationDocumentField(
+    type,
+    label,
+    help
+  ) {
+    return `
+      <label class="document-upload-card">
+
+        <span class="document-upload-card__icon">
+
+          <span class="material-symbols-rounded">
+            upload_file
+          </span>
+
+        </span>
+
+        <span class="document-upload-card__text">
+
+          <strong>
+            ${escapeHtml(label)}
+          </strong>
+
+          <small>
+            ${escapeHtml(help)}
+          </small>
+
+          <span
+            class="file-state"
+            data-file-state="${escapeHtml(type)}"
+          >
+            Belum memilih file
+          </span>
+
+        </span>
+
+        <input
+          class="document-upload-card__input"
+          type="file"
+          accept=".pdf,image/*"
+          data-wizard-file="${escapeHtml(type)}"
+        >
+
+      </label>
+    `;
+  }
+
+
+  function reviewItem(
+    label,
+    value
+  ) {
+    return `
+      <div>
+
+        <span>
+          ${escapeHtml(label)}
+        </span>
+
+        <strong>
+          ${escapeHtml(value || '—')}
+        </strong>
+
+      </div>
+    `;
+  }
+
+
+  function bindApplicationWizardStep() {
+    const admissionSelect =
+      document.getElementById(
+        'wizardAdmissionSelect'
+      );
+
+    if (
+      admissionSelect
+    ) {
+      const targetSelect =
+        document.getElementById(
+          'wizardTargetSelect'
+        );
+
+      admissionSelect.addEventListener(
+        'change',
+        function () {
+          const admission =
+            applicationWizardState
+              .module_data
+              .admissions
+              .find(
+                function (item) {
+                  return (
+                    item.admission_id ===
+                    admissionSelect.value
+                  );
+                }
+              );
+
+          targetSelect.innerHTML =
+            renderWizardTargetOptions(
+              admission,
+              ''
+            );
+
+          document
+            .getElementById(
+              'wizardTargetPreview'
+            )
+            .innerHTML =
+              renderWizardTargetPreview(
+                admission,
+                ''
+              );
+        }
+      );
+
+      targetSelect.addEventListener(
+        'change',
+        function () {
+          const admission =
+            applicationWizardState
+              .module_data
+              .admissions
+              .find(
+                function (item) {
+                  return (
+                    item.admission_id ===
+                    admissionSelect.value
+                  );
+                }
+              );
+
+          document
+            .getElementById(
+              'wizardTargetPreview'
+            )
+            .innerHTML =
+              renderWizardTargetPreview(
+                admission,
+                targetSelect.value
+              );
+        }
+      );
+    }
+
+    const secondaryToggle =
+      document.getElementById(
+        'secondaryGuardianToggle'
+      );
+
+    if (
+      secondaryToggle
+    ) {
+      secondaryToggle.addEventListener(
+        'change',
+        function () {
+          document
+            .getElementById(
+              'secondaryGuardianFields'
+            )
+            .hidden =
+              !secondaryToggle.checked;
+        }
+      );
+    }
+
+    document
+      .querySelectorAll(
+        '[data-wizard-file]'
+      )
+      .forEach(
+        function (input) {
+          input.addEventListener(
+            'change',
+            function () {
+              const file =
+                input.files?.[0];
+
+              if (
+                !file
+              ) {
+                return;
+              }
+
+              const type =
+                input.dataset.wizardFile;
+
+              const stateLabel =
+                document.querySelector(
+                  `[data-file-state="${type}"]`
+                );
+
+              if (
+                stateLabel
+              ) {
+                stateLabel.textContent =
+                  'Menyimpan ke draft…';
+              }
+
+              const filePromise =
+                window.EduOffline
+                  .saveFile(
+                    applicationWizardState.draft_id,
+                    type,
+                    file
+                  )
+                  .then(
+                    function () {
+                      if (
+                        stateLabel
+                      ) {
+                        stateLabel.textContent =
+                          file.name +
+                          ' • tersimpan di perangkat';
+                      }
+                    }
+                  )
+                  .catch(
+                    function (error) {
+                      toast(
+                        error.message
+                      );
+
+                      throw error;
+                    }
+                  );
+
+              applicationWizardState
+                .pending_file_promises
+                .push(
+                  filePromise
+                );
+            }
+          );
+        }
+      );
+
+    restoreWizardFileStates();
+  }
+
+
+  function restoreWizardFileStates() {
+    (
+      applicationWizardState.server_documents ||
+      []
+    ).forEach(
+      function (documentRow) {
+        const label =
+          document.querySelector(
+            `[data-file-state="${documentRow.document_type}"]`
+          );
+
+        if (
+          label
+        ) {
+          label.textContent =
+            documentRow.file_name +
+            ' • tersimpan di server';
+        }
+      }
+    );
+
+    window.EduOffline
+      .getFiles(
+        applicationWizardState.draft_id
+      )
+      .then(
+        function (files) {
+          files.forEach(
+            function (fileRow) {
+              const label =
+                document.querySelector(
+                  `[data-file-state="${fileRow.document_type}"]`
+                );
+
+              if (
+                label
+              ) {
+                label.textContent =
+                  fileRow.file_name +
+                  ' • tersimpan di perangkat';
+              }
+            }
+          );
+        }
+      );
+  }
+
+
+  function validateCurrentWizardStep() {
+    const form =
+      document.getElementById(
+        'applicationStepForm'
+      );
+
+    if (
+      form &&
+      !form.reportValidity()
+    ) {
+      return false;
+    }
+
+    if (
+      applicationWizardState.step ===
+      3
+    ) {
+      const declaration =
+        document.getElementById(
+          'wizardDeclaration'
+        );
+
+      if (
+        declaration &&
+        !declaration.checked
+      ) {
+        toast(
+          'Centang konfirmasi data sebelum mengirim.'
+        );
+
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+
+  function saveCurrentWizardStepToState() {
+    const state =
+      applicationWizardState;
+
+    const form =
+      document.getElementById(
+        'applicationStepForm'
+      );
+
+    if (
+      state.step ===
+      1 &&
+      form
+    ) {
+      const values =
+        Object.fromEntries(
+          new FormData(
+            form
+          ).entries()
+        );
+
+      Object.assign(
+        state.data,
+        values
+      );
+
+      if (
+        state.application_id
+      ) {
+        state.data.admission_id =
+          state.data.admission_id ||
+          applicationWizardState.data.admission_id;
+
+        state.data.target_id =
+          state.data.target_id ||
+          applicationWizardState.data.target_id;
+      }
+
+      return;
+    }
+
+    if (
+      state.step ===
+      2 &&
+      form
+    ) {
+      const values =
+        Object.fromEntries(
+          new FormData(
+            form
+          ).entries()
+        );
+
+      const guardians = [
+        {
+          application_guardian_id:
+            state.data.guardians?.[0]
+              ?.application_guardian_id ||
+            '',
+
+          guardian_name:
+            values.guardian_primary_name ||
+            '',
+
+          relationship:
+            values.guardian_primary_relationship ||
+            '',
+
+          is_primary:
+            true,
+
+          phone:
+            values.guardian_primary_phone ||
+            '',
+
+          email:
+            values.guardian_primary_email ||
+            '',
+
+          occupation:
+            values.guardian_primary_occupation ||
+            '',
+
+          address:
+            values.guardian_primary_address ||
+            ''
+        }
+      ];
+
+      const secondaryEnabled =
+        document.getElementById(
+          'secondaryGuardianToggle'
+        )?.checked;
+
+      if (
+        secondaryEnabled &&
+        values.guardian_secondary_name
+      ) {
+        guardians.push(
+          {
+            application_guardian_id:
+              state.data.guardians?.[1]
+                ?.application_guardian_id ||
+              '',
+
+            guardian_name:
+              values.guardian_secondary_name,
+
+            relationship:
+              values.guardian_secondary_relationship ||
+              '',
+
+            is_primary:
+              false,
+
+            phone:
+              values.guardian_secondary_phone ||
+              '',
+
+            email:
+              values.guardian_secondary_email ||
+              '',
+
+            occupation:
+              values.guardian_secondary_occupation ||
+              '',
+
+            address:
+              values.guardian_secondary_address ||
+              ''
+          }
+        );
+      }
+
+      state.data.guardians =
+        guardians;
+    }
+  }
+
+
+  function saveApplicationDraftOffline() {
+    if (
+      !applicationWizardState
+    ) {
+      return Promise.resolve();
+    }
+
+    return window.EduOffline.saveDraft(
+      applicationWizardState.draft_id,
+      {
+        application_id:
+          applicationWizardState.application_id,
+
+        step:
+          applicationWizardState.step,
+
+        data:
+          applicationWizardState.data,
+
+        submit_requested:
+          applicationWizardState.submit_requested
+      }
+    );
+  }
+
+
+  function saveApplicationWizard(
+    submit
+  ) {
+    applicationWizardState.submit_requested =
+      Boolean(
+        submit
+      );
+
+    applicationWizardState.data.channel =
+      navigator.onLine
+        ? 'ONLINE'
+        : 'OFFLINE_SYNC';
+
+    saveApplicationDraftOffline();
+
+    if (
+      !navigator.onLine
+    ) {
+      toast(
+        submit
+          ? 'Pendaftaran disimpan offline. Kirim saat perangkat kembali online.'
+          : 'Draft tersimpan di perangkat.'
+      );
+
+      closeModal();
+
+      renderOfflineApplicationDrafts(
+        applicationWizardState.module_data
+      );
+
+      return;
+    }
+
+    const button =
+      submit
+        ? document.getElementById(
+            'wizardNextButton'
+          )
+        : document.getElementById(
+            'wizardSaveDraftButton'
+          );
+
+    setButtonLoading(
+      button,
+      true,
+      submit
+        ? 'Mengirim…'
+        : 'Menyimpan…'
+    );
+
+    startLoading();
+
+    const payload =
+      Object.assign(
+        {},
+        applicationWizardState.data
+      );
+
+    if (
+      applicationWizardState.application_id
+    ) {
+      payload.application_id =
+        applicationWizardState.application_id;
+    }
+
+    Promise
+      .all(
+        applicationWizardState.pending_file_promises ||
+        []
+      )
+      .then(
+        function () {
+          return window.EduApi.request(
+            'application.save',
+            {
+              token:
+                getToken(),
+
+              payload:
+                payload
+            }
+          );
+        }
+      )
+      .then(
+        function (response) {
+          applicationWizardState.application_id =
+            response.data.application.application_id;
+
+          return uploadApplicationWizardFiles(
+            applicationWizardState.application_id
+          );
+        }
+      )
+      .then(
+        function () {
+          if (
+            !submit ||
+            applicationWizardState.was_submitted
+          ) {
+            return null;
+          }
+
+          return window.EduApi.request(
+            'application.submit',
+            {
+              token:
+                getToken(),
+
+              application_id:
+                applicationWizardState.application_id
+            }
+          );
+        }
+      )
+      .then(
+        function () {
+          return window.EduOffline.deleteDraft(
+            applicationWizardState.draft_id
+          );
+        }
+      )
+      .then(
+        function () {
+          const applicationId =
+            applicationWizardState.application_id;
+
+          closeModal();
+
+          invalidatePageCache(
+            'admissions'
+          );
+
+          toast(
+            submit
+              ? applicationWizardState.was_submitted
+                ? 'Perubahan pendaftaran berhasil disimpan: ' +
+                  applicationId
+                : 'Pendaftaran berhasil dikirim: ' +
+                  applicationId
+              : 'Draft server berhasil disimpan: ' +
+                applicationId
+          );
+
+          admissionUiState.tab =
+            'applications';
+
+          loadAdmissions(
+            true
+          );
+        }
+      )
+      .catch(
+        function (error) {
+          toast(
+            error.message
+          );
+        }
+      )
+      .finally(
+        function () {
+          setButtonLoading(
+            button,
+            false
+          );
+
+          stopLoading();
+        }
+      );
+  }
+
+
+  function uploadApplicationWizardFiles(
+    applicationId
+  ) {
+    return window.EduOffline
+      .getFiles(
+        applicationWizardState.draft_id
+      )
+      .then(
+        function (files) {
+          let chain =
+            Promise.resolve();
+
+          files.forEach(
+            function (row) {
+              chain =
+                chain.then(
+                  function () {
+                    const file =
+                      new File(
+                        [
+                          row.blob
+                        ],
+                        row.file_name,
+                        {
+                          type:
+                            row.mime_type ||
+                            row.blob.type
+                        }
+                      );
+
+                    return window.EduUpload.send(
+                      'upload.application_file',
+                      {
+                        token:
+                          getToken(),
+
+                        application_id:
+                          applicationId,
+
+                        document_type:
+                          row.document_type
+                      },
+                      file
+                    );
+                  }
+                );
+            }
+          );
+
+          return chain;
+        }
+      );
+  }
+
+
+  /* =========================================================
+   * OFFLINE DRAFT LIST
+   * ========================================================= */
+
+  function renderOfflineApplicationDrafts(
+    moduleData
+  ) {
+    const root =
+      document.getElementById(
+        'admissionOfflineDraftArea'
+      );
+
+    if (
+      !root
+    ) {
+      return;
+    }
+
+    window.EduOffline
+      .listDrafts()
+      .then(
+        function (drafts) {
+          if (
+            !drafts.length
+          ) {
+            root.innerHTML =
+              '';
+
+            return;
+          }
+
+          root.innerHTML = `
+            <div class="offline-draft-banner">
+
+              <span class="offline-draft-banner__icon">
+                <span class="material-symbols-rounded">
+                  cloud_off
+                </span>
+              </span>
+
+              <div>
+
+                <strong>
+                  ${drafts.length}
+                  draft pendaftaran tersimpan di perangkat
+                </strong>
+
+                <small>
+                  Bisa dilanjutkan tanpa mengisi ulang.
+                </small>
+
+              </div>
+
+              <button
+                class="secondary-button compact-button"
+                type="button"
+                data-resume-offline-draft="${escapeHtml(drafts[0].id)}"
+              >
+                Lanjutkan
+              </button>
+
+            </div>
+          `;
+
+          root
+            .querySelector(
+              '[data-resume-offline-draft]'
+            )
+            .addEventListener(
+              'click',
+              function () {
+                const draft =
+                  drafts[0];
+
+                openApplicationWizard(
+                  moduleData,
+                  {
+                    draft_id:
+                      draft.id,
+
+                    application_id:
+                      draft.data.application_id ||
+                      '',
+
+                    step:
+                      draft.data.step ||
+                      1,
+
+                    data:
+                      draft.data.data ||
+                      {},
+
+                    submit_requested:
+                      draft.data.submit_requested
+                  }
+                );
+              }
+            );
+        }
+      );
+  }
+
+
+  /* =========================================================
+   * APPLICATION DETAIL + TIMELINE
+   * ========================================================= */
+
+  function openApplicationDetail(
+    applicationId,
+    moduleData
+  ) {
+    startLoading();
+
+    window.EduApi
+      .request(
+        'application.get',
+        {
+          token:
+            getToken(),
+
+          application_id:
+            applicationId
+        }
+      )
+      .then(
+        function (response) {
+          renderApplicationDetail(
+            response.data,
+            moduleData
+          );
+        }
+      )
+      .catch(
+        function (error) {
+          toast(
+            error.message
+          );
+        }
+      )
+      .finally(
+        stopLoading
+      );
+  }
+
+
+  function renderApplicationDetail(
+    detail,
+    moduleData
+  ) {
+    const application =
+      detail.application;
+
+    const complete =
+      Boolean(
+        application.document_status &&
+        application.document_status.complete
+      );
+
+    modal(
+      `
+        <div class="application-detail">
+
+          <div class="application-detail__hero">
+
+            <span class="application-detail__avatar">
+              ${escapeHtml(initials(application.full_name))}
+            </span>
+
+            <div>
+
+              <span class="application-detail__id">
+                ${escapeHtml(application.application_id)}
+              </span>
+
+              <h3>
+                ${escapeHtml(application.full_name)}
+              </h3>
+
+              <p>
+                ${escapeHtml(application.admission_name)}
+                •
+                ${escapeHtml(application.program_name)}
+                •
+                ${escapeHtml(application.level_name)}
+              </p>
+
+            </div>
+
+            <span class="application-stage-badge">
+              ${escapeHtml(application.stage_label)}
+            </span>
+
+          </div>
+
+
+          <div class="application-detail-grid">
+
+            ${detailItem(
+              'T.A Masuk',
+              application.period_name ||
+              application.entry_period_id
+            )}
+
+            ${detailItem(
+              'Jalur',
+              application.admission_name
+            )}
+
+            ${detailItem(
+              'Program',
+              application.program_name
+            )}
+
+            ${detailItem(
+              'Tingkat',
+              application.level_name
+            )}
+
+            ${detailItem(
+              'Status Berkas',
+              complete
+                ? 'Lengkap'
+                : 'Belum Lengkap'
+            )}
+
+            ${detailItem(
+              'Peserta ID',
+              application.participant_id ||
+              'Belum aktif'
+            )}
+
+          </div>
+
+
+          <section class="timeline-card">
+
+            <div class="card-head">
+
+              <div>
+
+                <p class="section-kicker">
+                  TIMELINE
+                </p>
+
+                <h3>
+                  Progres Pendaftaran
+                </h3>
+
+                <p>
+                  Timeline ini nantinya juga dipakai Portal Wali.
+                </p>
+
+              </div>
+
+            </div>
+
+            <div class="application-timeline">
+
+              ${detail.timeline
+                .map(
+                  function (stage) {
+                    return `
+                      <div
+                        class="timeline-step ${
+                          stage.state ===
+                          'DONE'
+                            ? 'is-done'
+                            : stage.state ===
+                                'CURRENT'
+                              ? 'is-current'
+                              : ''
+                        }"
+                      >
+
+                        <span class="timeline-step__dot">
+
+                          ${
+                            stage.state ===
+                            'DONE'
+                              ? `
+                                <span class="material-symbols-rounded">
+                                  check
+                                </span>
+                              `
+                              : ''
+                          }
+
+                        </span>
+
+                        <span>
+
+                          <strong>
+                            ${escapeHtml(stage.label)}
+                          </strong>
+
+                          <small>
+                            ${
+                              stage.state ===
+                              'DONE'
+                                ? 'Selesai'
+                                : stage.state ===
+                                    'CURRENT'
+                                  ? 'Sedang diproses'
+                                  : 'Menunggu'
+                            }
+                          </small>
+
+                        </span>
+
+                      </div>
+                    `;
+                  }
+                )
+                .join('')}
+
+            </div>
+
+          </section>
+
+
+          <section class="document-status-section">
+
+            <div class="card-head">
+
+              <div>
+
+                <p class="section-kicker">
+                  BERKAS
+                </p>
+
+                <h3>
+                  Kelengkapan Dokumen
+                </h3>
+
+              </div>
+
+            </div>
+
+            <div class="document-status-list">
+
+              ${renderApplicationDocumentStatus(
+                detail
+              )}
+
+            </div>
+
+          </section>
+
+
+          <div class="application-detail-actions">
+
+            ${
+              application.stage_code ===
+                'REGISTRATION' ||
+              application.stage_code ===
+                'DOCUMENT_VERIFICATION'
+                ? `
+                  <button
+                    id="editApplicationButton"
+                    class="secondary-button"
+                    type="button"
+                  >
+                    <span class="material-symbols-rounded">
+                      edit
+                    </span>
+
+                    Lengkapi Form
+                  </button>
+                `
+                : ''
+            }
+
+            <button
+              id="printApplicationButton"
+              class="secondary-button"
+              type="button"
+            >
+              <span class="material-symbols-rounded">
+                print
+              </span>
+
+              Cetak Form
+            </button>
+
+            ${
+              application.stage_code !==
+              'ACTIVE'
+                ? `
+                  <button
+                    id="advanceApplicationButton"
+                    class="primary-button"
+                    type="button"
+                  >
+                    Lanjut Tahap
+
+                    <span class="material-symbols-rounded">
+                      arrow_forward
+                    </span>
+                  </button>
+                `
+                : ''
+            }
+
+          </div>
+
+        </div>
+      `,
+      'sheet'
+    );
+
+    document
+      .getElementById(
+        'editApplicationButton'
+      )
+      ?.addEventListener(
+        'click',
+        function () {
+          const wizardData = {
+            admission_id:
+              application.admission_id,
+
+            target_id:
+              application.target_id,
+
+            source_type:
+              application.source_type ||
+              'ADMIN',
+
+            channel:
+              navigator.onLine
+                ? 'ONLINE'
+                : 'OFFLINE_SYNC',
+
+            full_name:
+              application.full_name,
+
+            nik:
+              application.nik,
+
+            official_number:
+              application.official_number,
+
+            gender:
+              application.gender,
+
+            birth_place:
+              application.birth_place,
+
+            birth_date:
+              dateInput(
+                application.birth_date
+              ),
+
+            previous_institution:
+              application.previous_institution,
+
+            previous_level:
+              application.previous_level,
+
+            previous_graduation_year:
+              application.previous_graduation_year,
+
+            guardians:
+              detail.guardians ||
+              []
+          };
+
+          openApplicationWizard(
+            moduleData,
+            {
+              draft_id:
+                'EDIT-' +
+                application.application_id,
+
+              application_id:
+                application.application_id,
+
+              step:
+                1,
+
+              data:
+                wizardData,
+
+              server_documents:
+                detail.documents ||
+                [],
+
+              was_submitted:
+                application.status !==
+                'DRAFT'
+            }
+          );
+        }
+      );
+
+    document
+      .getElementById(
+        'printApplicationButton'
+      )
+      .addEventListener(
+        'click',
+        function () {
+          printApplication(
+            application.application_id
+          );
+        }
+      );
+
+    document
+      .getElementById(
+        'advanceApplicationButton'
+      )
+      ?.addEventListener(
+        'click',
+        function () {
+          advanceApplicationStage(
+            application.application_id,
+            moduleData
+          );
+        }
+      );
+  }
+
+
+  function renderApplicationDocumentStatus(
+    detail
+  ) {
+    const documents =
+      detail.documents ||
+      [];
+
+    const admissionType =
+      detail.application.admission_type;
+
+    const types = [
+      {
+        code:
+          'PHOTO',
+
+        label:
+          'Foto Santri / Peserta',
+
+        required:
+          true
+      },
+
+      {
+        code:
+          'KK',
+
+        label:
+          'Kartu Keluarga',
+
+        required:
+          true
+      },
+
+      {
+        code:
+          'AKTA',
+
+        label:
+          'Akta Kelahiran',
+
+        required:
+          true
+      },
+
+      {
+        code:
+          'PREV_EDU',
+
+        label:
+          'Berkas Jenjang Sebelumnya',
+
+        required:
+          true
+      },
+
+      {
+        code:
+          'KTP_GUARDIAN',
+
+        label:
+          'KTP Wali',
+
+        required:
+          false
+      }
+    ];
+
+    if (
+      admissionType ===
+        'SOCIAL' ||
+      admissionType ===
+        'SCHOLARSHIP'
+    ) {
+      types.push(
+        {
+          code:
+            'SOCIAL_PROOF',
+
+          label:
+            'Berkas Pendukung Jalur',
+
+          required:
+            true
+        }
+      );
+    }
+
+    return types
+      .map(
+        function (type) {
+          const document =
+            documents.find(
+              function (row) {
+                return (
+                  row.document_type ===
+                  type.code
+                );
+              }
+            );
+
+          return `
+            <div class="document-status-row">
+
+              <span class="document-status-row__icon">
+
+                <span class="material-symbols-rounded">
+                  ${
+                    document
+                      ? 'check_circle'
+                      : 'pending'
+                  }
+                </span>
+
+              </span>
+
+              <span>
+
+                <strong>
+                  ${escapeHtml(type.label)}
+                </strong>
+
+                <small>
+                  ${
+                    type.required
+                      ? 'Wajib sebelum Verifikasi Berkas selesai'
+                      : 'Opsional'
+                  }
+                </small>
+
+              </span>
+
+              <span
+                class="state-badge ${
+                  document
+                    ? 'is-ready'
+                    : 'is-pending'
+                }"
+              >
+                ${
+                  document
+                    ? 'ADA'
+                    : 'BELUM'
+                }
+              </span>
+
+            </div>
+          `;
+        }
+      )
+      .join('');
+  }
+
+
+  function printApplication(
+    applicationId
+  ) {
+    startLoading();
+
+    window.EduApi
+      .request(
+        'application.printlink',
+        {
+          token:
+            getToken(),
+
+          application_id:
+            applicationId
+        }
+      )
+      .then(
+        function (response) {
+          const url =
+            response.data.print_url;
+
+          window.open(
+            url,
+            '_blank',
+            'noopener'
+          );
+        }
+      )
+      .catch(
+        function (error) {
+          toast(
+            error.message
+          );
+        }
+      )
+      .finally(
+        stopLoading
+      );
+  }
+
+
+  function advanceApplicationStage(
+    applicationId,
+    moduleData
+  ) {
+    const button =
+      document.getElementById(
+        'advanceApplicationButton'
+      );
+
+    setButtonLoading(
+      button,
+      true,
+      'Memproses…'
+    );
+
+    startLoading();
+
+    window.EduApi
+      .request(
+        'application.stage',
+        {
+          token:
+            getToken(),
+
+          application_id:
+            applicationId
+        }
+      )
+      .then(
+        function (response) {
+          invalidatePageCache(
+            'admissions'
+          );
+
+          invalidatePageCache(
+            'participants'
+          );
+
+          invalidatePageCache(
+            'dashboard'
+          );
+
+          toast(
+            'Tahap berhasil diperbarui.'
+          );
+
+          renderApplicationDetail(
+            response.data,
+            moduleData
+          );
+        }
+      )
+      .catch(
+        function (error) {
+          toast(
+            error.message
+          );
+        }
+      )
+      .finally(
+        function () {
+          setButtonLoading(
+            button,
+            false
+          );
+
+          stopLoading();
+        }
+      );
+  }
 
 
   /* =========================================================
@@ -3729,7 +7877,7 @@ window.EduApp = (function () {
             person_add
           </span>
 
-          Tambah Peserta
+          Pendaftaran Baru
         </button>
 
       </section>
@@ -3830,9 +7978,11 @@ window.EduApp = (function () {
       .addEventListener(
         'click',
         function () {
-          openParticipantForm(
-            null,
-            data
+          admissionUiState.tab =
+            'applications';
+
+          openPage(
+            'admissions'
           );
         }
       );
@@ -6498,6 +10648,15 @@ window.EduApp = (function () {
    * ========================================================= */
 
   function bindGlobalEvents() {
+    window.addEventListener(
+      'online',
+      function () {
+        toast(
+          'Koneksi kembali online. Draft offline siap dilanjutkan.'
+        );
+      }
+    );
+
     tutorialButton?.addEventListener(
       'click',
       openCurrentTutorial
@@ -6855,7 +11014,7 @@ window.EduApp = (function () {
         navigator
           .serviceWorker
           .register(
-            './service-worker.js?v=021'
+            './service-worker.js?v=030'
           )
           .catch(
             function (error) {
