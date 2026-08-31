@@ -1,7 +1,7 @@
 /**
  * ============================================================
  * EDUCATION FINANCE & MANAGEMENT PLATFORM
- * FRONTEND APP v0.3.0
+ * FRONTEND APP v0.3.1 — PENERIMAAN BARU (SAFE ADDITIVE)
  * ============================================================
  *
  * FOCUS:
@@ -51,6 +51,13 @@ window.EduApp = (function () {
       id: 'admissions',
       label: 'Pendaftaran',
       icon: 'how_to_reg',
+      permission: 'admission.view'
+    },
+
+    {
+      id: 'reception_new',
+      label: 'Penerimaan Baru',
+      icon: 'event_note',
       permission: 'admission.view'
     },
 
@@ -444,6 +451,22 @@ window.EduApp = (function () {
         'Program, Tingkat, Kelas/Rombel, dan tanggal efektif tidak dibebankan kepada wali sebagai isian bebas.'
     },
 
+    reception_new: {
+      eyebrow: 'PENERIMAAN BARU',
+      title: 'Panduan Penerimaan Terpadu',
+      intro:
+        'Menu percobaan ini menggabungkan tracking T.A, jalur, dan pendaftar tanpa menghapus menu Periode dan Pendaftaran lama.',
+      steps: [
+        'Pilih card T.A untuk melihat ringkasan penerimaan pada tahun tersebut.',
+        'Buka Jalur Pendaftaran untuk melihat target masuk dan ringkasan keputusan per jalur.',
+        'Buka Pendaftar untuk mencari calon peserta dan memantau prosesnya.',
+        'Calon Siswa adalah seluruh pendaftar, bukan peserta aktif.',
+        'Peserta baru menjadi Master Peserta setelah workflow mencapai tahap Aktif.'
+      ],
+      note:
+        'Diterima tidak sama dengan Aktif. Daftar ulang dan aktivasi tetap mengikuti Admission Workflow yang sudah dikunci.'
+    },
+
     participants: {
       eyebrow: 'MASTER PESERTA',
       title: 'Panduan Data Peserta',
@@ -538,6 +561,12 @@ window.EduApp = (function () {
 
   let admissionUiState = {
     tab: 'applications'
+  };
+
+  let receptionNewUiState = {
+    period_id: '',
+    tab: 'routes',
+    route_filter: ''
   };
 
   let applicationWizardState =
@@ -1426,6 +1455,19 @@ window.EduApp = (function () {
     ) {
       renderComingSoon(
         page
+      );
+
+      return;
+    }
+
+    if (
+      pageId ===
+      'reception_new'
+    ) {
+      loadReceptionNew(
+        Boolean(
+          config.force
+        )
       );
 
       return;
@@ -2929,6 +2971,10 @@ window.EduApp = (function () {
 
         invalidatePageCache(
           'dashboard'
+        );
+
+        invalidatePageCache(
+          'reception_new'
         );
 
         closeModal();
@@ -4921,6 +4967,10 @@ window.EduApp = (function () {
           );
 
           invalidatePageCache(
+            'reception_new'
+          );
+
+          invalidatePageCache(
             'participants'
           );
 
@@ -6855,6 +6905,10 @@ window.EduApp = (function () {
             'admissions'
           );
 
+          invalidatePageCache(
+            'reception_new'
+          );
+
           toast(
             submit
               ? applicationWizardState.was_submitted
@@ -6865,6 +6919,20 @@ window.EduApp = (function () {
               : 'Draft server berhasil disimpan: ' +
                 applicationId
           );
+
+          if (
+            activePage ===
+            'reception_new'
+          ) {
+            receptionNewUiState.tab =
+              'applicants';
+
+            loadReceptionNew(
+              true
+            );
+
+            return;
+          }
 
           admissionUiState.tab =
             'applications';
@@ -7702,6 +7770,10 @@ window.EduApp = (function () {
           );
 
           invalidatePageCache(
+            'reception_new'
+          );
+
+          invalidatePageCache(
             'participants'
           );
 
@@ -7716,6 +7788,3122 @@ window.EduApp = (function () {
           renderApplicationDetail(
             response.data,
             moduleData
+          );
+        }
+      )
+      .catch(
+        function (error) {
+          toast(
+            error.message
+          );
+        }
+      )
+      .finally(
+        function () {
+          setButtonLoading(
+            button,
+            false
+          );
+
+          stopLoading();
+        }
+      );
+  }
+
+
+
+  /* =========================================================
+   * PENERIMAAN BARU — SAFE ADDITIVE MENU v0.3.1
+   * =========================================================
+   *
+   * PENTING:
+   * - Menu Periode lama TETAP ADA.
+   * - Menu Pendaftaran lama TETAP ADA.
+   * - Backend / schema / workflow lama TIDAK DIUBAH.
+   * - Menu ini hanya menjadi workspace gabungan baru.
+   */
+
+  function loadReceptionNew(
+    force
+  ) {
+    const cached =
+      getPageCache(
+        'reception_new'
+      );
+
+    if (
+      cached &&
+      !force
+    ) {
+      renderReceptionNew(
+        cached
+      );
+
+      return;
+    }
+
+    if (
+      !cached
+    ) {
+      showPageLoading(
+        'Membuka Penerimaan…'
+      );
+    }
+
+    startLoading();
+
+    Promise.all([
+      window.EduApi.request(
+        'period.list',
+        {
+          token:
+            getToken()
+        }
+      ),
+
+      window.EduApi.request(
+        'admission.list',
+        {
+          token:
+            getToken()
+        }
+      ),
+
+      window.EduApi.request(
+        'application.list',
+        {
+          token:
+            getToken()
+        }
+      )
+    ])
+      .then(
+        function (responses) {
+          const data = {
+            periods:
+              Array.isArray(
+                responses[0].data
+              )
+                ? responses[0].data
+                : [],
+
+            admissions:
+              Array.isArray(
+                responses[1].data
+              )
+                ? responses[1].data
+                : [],
+
+            applications:
+              Array.isArray(
+                responses[2].data
+              )
+                ? responses[2].data
+                : []
+          };
+
+          setPageCache(
+            'reception_new',
+            data
+          );
+
+          renderReceptionNew(
+            data
+          );
+        }
+      )
+      .catch(
+        renderPageError
+      )
+      .finally(
+        stopLoading
+      );
+  }
+
+
+  function renderReceptionNew(
+    data
+  ) {
+    const periods =
+      receptionSortedPeriods(
+        data.periods
+      );
+
+    if (
+      receptionNewUiState.period_id &&
+      !periods.some(
+        function (period) {
+          return (
+            period.period_id ===
+            receptionNewUiState.period_id
+          );
+        }
+      )
+    ) {
+      receptionNewUiState.period_id =
+        '';
+    }
+
+    if (
+      !receptionNewUiState.period_id &&
+      periods.length
+    ) {
+      const active =
+        periods.find(
+          function (period) {
+            return (
+              String(
+                period.is_active
+              ).toLowerCase() ===
+              'true'
+            );
+          }
+        );
+
+      receptionNewUiState.period_id =
+        (
+          active ||
+          periods[0]
+        ).period_id;
+    }
+
+    const selectedPeriod =
+      periods.find(
+        function (period) {
+          return (
+            period.period_id ===
+            receptionNewUiState.period_id
+          );
+        }
+      ) ||
+      null;
+
+    pageContent.innerHTML = `
+      <section class="reception-new-hero">
+
+        <div class="reception-new-hero__identity">
+
+          <span class="reception-new-hero__icon">
+            <span class="material-symbols-rounded">
+              event_note
+            </span>
+          </span>
+
+          <div>
+
+            <div class="reception-new-hero__eyebrow">
+              <span>
+                PENERIMAAN TERPADU
+              </span>
+
+              <span class="reception-new-beta">
+                BARU
+              </span>
+            </div>
+
+            <h2>
+              Penerimaan
+            </h2>
+
+            <p>
+              Tracking Tahun Ajaran, Jalur Pendaftaran,
+              dan calon peserta dalam satu workspace.
+            </p>
+
+          </div>
+
+        </div>
+
+        <div class="reception-new-hero__actions">
+
+          <button
+            id="receptionNewPeriodButton"
+            class="secondary-button"
+            type="button"
+          >
+            <span class="material-symbols-rounded">
+              add
+            </span>
+
+            Tambah T.A.
+          </button>
+
+          <button
+            id="receptionNewApplicationButton"
+            class="primary-button"
+            type="button"
+            ${
+              selectedPeriod
+                ? ''
+                : 'disabled'
+            }
+          >
+            <span class="material-symbols-rounded">
+              person_add
+            </span>
+
+            Pendaftaran Baru
+          </button>
+
+        </div>
+
+      </section>
+
+
+      <div class="reception-new-safe-note">
+
+        <span class="material-symbols-rounded">
+          shield
+        </span>
+
+        <div>
+          <strong>
+            Mode baru tanpa menghapus menu lama
+          </strong>
+
+          <span>
+            Periode dan Pendaftaran lama tetap tersedia sebagai fallback.
+          </span>
+        </div>
+
+      </div>
+
+
+      ${
+        periods.length
+          ? `
+            <section class="reception-period-section">
+
+              <div class="reception-section-head">
+
+                <div>
+                  <p class="section-kicker">
+                    TAHUN AJARAN
+                  </p>
+
+                  <h3>
+                    Tracking Penerimaan
+                  </h3>
+
+                  <p>
+                    Klik Tahun Ajaran untuk membuka jalur dan pendaftarnya.
+                  </p>
+                </div>
+
+              </div>
+
+              <div class="reception-period-grid">
+
+                ${periods
+                  .map(
+                    function (period) {
+                      return receptionPeriodCard(
+                        period,
+                        data,
+                        selectedPeriod &&
+                        selectedPeriod.period_id ===
+                          period.period_id
+                      );
+                    }
+                  )
+                  .join('')}
+
+              </div>
+
+            </section>
+
+
+            ${
+              selectedPeriod
+                ? renderReceptionPeriodWorkspace(
+                    selectedPeriod,
+                    data
+                  )
+                : ''
+            }
+          `
+          : `
+            <article class="content-card">
+
+              <div class="empty-state empty-state--large">
+
+                <span class="empty-state__icon">
+                  <span class="material-symbols-rounded">
+                    calendar_add_on
+                  </span>
+                </span>
+
+                <strong>
+                  Belum ada Tahun Ajaran
+                </strong>
+
+                <p>
+                  Tambahkan T.A pertama untuk mulai mengelola penerimaan.
+                </p>
+
+                <button
+                  id="receptionEmptyPeriodButton"
+                  class="primary-button"
+                  type="button"
+                >
+                  Tambah T.A.
+                </button>
+
+              </div>
+
+            </article>
+          `
+      }
+    `;
+
+    bindReceptionNew(
+      data,
+      selectedPeriod
+    );
+  }
+
+
+  function receptionSortedPeriods(
+    periods
+  ) {
+    return (
+      periods ||
+      []
+    )
+      .slice()
+      .sort(
+        function (a, b) {
+          const aActive =
+            String(
+              a.is_active
+            ).toLowerCase() ===
+            'true'
+              ? 1
+              : 0;
+
+          const bActive =
+            String(
+              b.is_active
+            ).toLowerCase() ===
+            'true'
+              ? 1
+              : 0;
+
+          if (
+            aActive !==
+            bActive
+          ) {
+            return (
+              bActive -
+              aActive
+            );
+          }
+
+          const aTime =
+            new Date(
+              a.start_date ||
+              0
+            ).getTime();
+
+          const bTime =
+            new Date(
+              b.start_date ||
+              0
+            ).getTime();
+
+          return (
+            bTime -
+            aTime
+          );
+        }
+      );
+  }
+
+
+  function receptionPeriodCard(
+    period,
+    data,
+    selected
+  ) {
+    const applications =
+      receptionApplicationsForPeriod(
+        data,
+        period.period_id
+      );
+
+    const stats =
+      receptionDecisionStats(
+        applications
+      );
+
+    const routeCount =
+      receptionAdmissionsForPeriod(
+        data,
+        period.period_id
+      ).length;
+
+    const active =
+      String(
+        period.is_active
+      ).toLowerCase() ===
+      'true';
+
+    return `
+      <button
+        class="reception-period-card ${
+          selected
+            ? 'is-selected'
+            : ''
+        }"
+        type="button"
+        data-reception-period="${escapeHtml(period.period_id)}"
+      >
+
+        <span class="reception-period-card__head">
+
+          <span>
+            <strong>
+              ${escapeHtml(period.period_name)}
+            </strong>
+
+            <small>
+              ${numberFormat(routeCount)} jalur pendaftaran
+            </small>
+          </span>
+
+          ${
+            active
+              ? `
+                <span class="reception-period-active">
+                  <span></span>
+                  Aktif
+                </span>
+              `
+              : ''
+          }
+
+        </span>
+
+        <span class="reception-period-card__stats">
+
+          ${receptionMiniMetric(
+            'Calon Siswa',
+            stats.total,
+            'groups'
+          )}
+
+          ${receptionMiniMetric(
+            'Diterima',
+            stats.accepted,
+            'check_circle'
+          )}
+
+          ${receptionMiniMetric(
+            'Pertimbangan',
+            stats.consideration,
+            'schedule'
+          )}
+
+          ${receptionMiniMetric(
+            'Bersyarat',
+            stats.conditional,
+            'verified_user'
+          )}
+
+          ${receptionMiniMetric(
+            'Tidak Diterima',
+            stats.rejected,
+            'cancel'
+          )}
+
+        </span>
+
+        <span class="reception-period-card__footer">
+          <span>
+            ${dateText(period.start_date)}
+            —
+            ${dateText(period.end_date)}
+          </span>
+
+          <span class="material-symbols-rounded">
+            arrow_forward
+          </span>
+        </span>
+
+      </button>
+    `;
+  }
+
+
+  function receptionMiniMetric(
+    label,
+    value,
+    icon
+  ) {
+    return `
+      <span class="reception-mini-metric">
+
+        <span class="material-symbols-rounded">
+          ${escapeHtml(icon)}
+        </span>
+
+        <span>
+          <small>
+            ${escapeHtml(label)}
+          </small>
+
+          <strong>
+            ${numberFormat(value)}
+          </strong>
+        </span>
+
+      </span>
+    `;
+  }
+
+
+  function renderReceptionPeriodWorkspace(
+    period,
+    data
+  ) {
+    const applications =
+      receptionApplicationsForPeriod(
+        data,
+        period.period_id
+      );
+
+    const admissions =
+      receptionAdmissionsForPeriod(
+        data,
+        period.period_id
+      );
+
+    const stats =
+      receptionDecisionStats(
+        applications
+      );
+
+    return `
+      <section class="reception-workspace">
+
+        <div class="reception-workspace__titlebar">
+
+          <div>
+
+            <div class="reception-workspace__meta">
+              <span>
+                ${escapeHtml(period.period_id)}
+              </span>
+
+              ${
+                String(
+                  period.is_active
+                ).toLowerCase() ===
+                'true'
+                  ? '<span class="state-badge is-ready">AKTIF</span>'
+                  : '<span class="state-badge is-pending">NONAKTIF</span>'
+              }
+            </div>
+
+            <h3>
+              ${escapeHtml(period.period_name)}
+            </h3>
+
+            <p>
+              ${dateText(period.start_date)}
+              —
+              ${dateText(period.end_date)}
+            </p>
+
+          </div>
+
+          <div class="reception-workspace__actions">
+
+            <button
+              id="receptionAddRouteButton"
+              class="secondary-button"
+              type="button"
+            >
+              <span class="material-symbols-rounded">
+                add
+              </span>
+
+              Tambah Jalur
+            </button>
+
+            <button
+              id="receptionEditPeriodButton"
+              class="secondary-button"
+              type="button"
+            >
+              <span class="material-symbols-rounded">
+                edit_calendar
+              </span>
+
+              Edit T.A.
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <div class="reception-important-note">
+
+          <span class="material-symbols-rounded">
+            info
+          </span>
+
+          <p>
+            <strong>Pendaftar bukan berarti sudah diterima dan menjadi peserta aktif.</strong>
+            Diterima tetap harus mengikuti Daftar Ulang sampai tahap Aktif.
+          </p>
+
+        </div>
+
+
+        <div class="reception-tabs">
+
+          ${receptionTabButton(
+            'summary',
+            'Ringkasan',
+            'analytics',
+            receptionNewUiState.tab ===
+              'summary'
+          )}
+
+          ${receptionTabButton(
+            'routes',
+            'Jalur Pendaftaran',
+            'account_tree',
+            receptionNewUiState.tab ===
+              'routes',
+            admissions.length
+          )}
+
+          ${receptionTabButton(
+            'applicants',
+            'Pendaftar',
+            'assignment_ind',
+            receptionNewUiState.tab ===
+              'applicants',
+            applications.length
+          )}
+
+        </div>
+
+
+        <div class="reception-tab-panel">
+
+          ${
+            receptionNewUiState.tab ===
+            'summary'
+              ? renderReceptionSummaryTab(
+                  stats,
+                  admissions,
+                  applications
+                )
+              : receptionNewUiState.tab ===
+                  'applicants'
+                ? renderReceptionApplicantsTab(
+                    period,
+                    data,
+                    applications,
+                    admissions
+                  )
+                : renderReceptionRoutesTab(
+                    period,
+                    data,
+                    admissions,
+                    applications
+                  )
+          }
+
+        </div>
+
+      </section>
+    `;
+  }
+
+
+  function receptionTabButton(
+    id,
+    label,
+    icon,
+    active,
+    count
+  ) {
+    return `
+      <button
+        class="reception-tab ${
+          active
+            ? 'is-active'
+            : ''
+        }"
+        type="button"
+        data-reception-tab="${escapeHtml(id)}"
+      >
+        <span class="material-symbols-rounded">
+          ${escapeHtml(icon)}
+        </span>
+
+        <span>
+          ${escapeHtml(label)}
+        </span>
+
+        ${
+          Number.isFinite(
+            Number(count)
+          )
+            ? `
+              <small>
+                ${numberFormat(count)}
+              </small>
+            `
+            : ''
+        }
+      </button>
+    `;
+  }
+
+
+  function renderReceptionSummaryTab(
+    stats,
+    admissions,
+    applications
+  ) {
+    return `
+      <div class="reception-summary-layout">
+
+        <article class="reception-summary-primary">
+
+          <span class="reception-summary-primary__icon">
+            <span class="material-symbols-rounded">
+              groups
+            </span>
+          </span>
+
+          <div>
+            <small>
+              CALON SISWA / PENDAFTAR
+            </small>
+
+            <strong>
+              ${numberFormat(stats.total)}
+            </strong>
+
+            <p>
+              Seluruh pendaftar pada T.A ini.
+              Angka ini bukan jumlah peserta aktif.
+            </p>
+          </div>
+
+        </article>
+
+
+        <div class="reception-summary-decisions">
+
+          ${receptionDecisionCard(
+            'Diterima',
+            stats.accepted,
+            'check_circle',
+            'Sudah mendapat keputusan diterima.'
+          )}
+
+          ${receptionDecisionCard(
+            'Pertimbangan',
+            stats.consideration,
+            'schedule',
+            'Belum mendapat keputusan akhir.'
+          )}
+
+          ${receptionDecisionCard(
+            'Diterima Bersyarat',
+            stats.conditional,
+            'verified_user',
+            'Diterima dengan syarat yang harus dipenuhi.'
+          )}
+
+          ${receptionDecisionCard(
+            'Tidak Diterima',
+            stats.rejected,
+            'cancel',
+            'Keputusan akhir tidak diterima.'
+          )}
+
+        </div>
+
+
+        <article class="reception-summary-info">
+
+          <div>
+            <span class="material-symbols-rounded">
+              account_tree
+            </span>
+
+            <span>
+              <strong>
+                ${numberFormat(admissions.length)}
+              </strong>
+
+              <small>
+                Jalur Pendaftaran
+              </small>
+            </span>
+          </div>
+
+          <div>
+            <span class="material-symbols-rounded">
+              pending_actions
+            </span>
+
+            <span>
+              <strong>
+                ${numberFormat(
+                  applications.filter(
+                    function (application) {
+                      return (
+                        String(
+                          application.stage_code
+                        ) !==
+                        'ACTIVE'
+                      );
+                    }
+                  ).length
+                )}
+              </strong>
+
+              <small>
+                Belum Aktif
+              </small>
+            </span>
+          </div>
+
+          <div>
+            <span class="material-symbols-rounded">
+              school
+            </span>
+
+            <span>
+              <strong>
+                ${numberFormat(
+                  applications.filter(
+                    function (application) {
+                      return (
+                        String(
+                          application.stage_code
+                        ) ===
+                        'ACTIVE'
+                      );
+                    }
+                  ).length
+                )}
+              </strong>
+
+              <small>
+                Sudah Aktif
+              </small>
+            </span>
+          </div>
+
+        </article>
+
+      </div>
+    `;
+  }
+
+
+  function receptionDecisionCard(
+    label,
+    value,
+    icon,
+    subtitle
+  ) {
+    return `
+      <article class="reception-decision-card">
+
+        <span class="reception-decision-card__icon">
+          <span class="material-symbols-rounded">
+            ${escapeHtml(icon)}
+          </span>
+        </span>
+
+        <span>
+          <small>
+            ${escapeHtml(label)}
+          </small>
+
+          <strong>
+            ${numberFormat(value)}
+          </strong>
+
+          <p>
+            ${escapeHtml(subtitle)}
+          </p>
+        </span>
+
+      </article>
+    `;
+  }
+
+
+  function renderReceptionRoutesTab(
+    period,
+    data,
+    admissions,
+    applications
+  ) {
+    if (
+      !admissions.length
+    ) {
+      return `
+        <div class="empty-state empty-state--large">
+
+          <span class="empty-state__icon">
+            <span class="material-symbols-rounded">
+              account_tree
+            </span>
+          </span>
+
+          <strong>
+            Belum ada Jalur Pendaftaran
+          </strong>
+
+          <p>
+            Tambahkan jalur untuk ${escapeHtml(period.period_name)}.
+          </p>
+
+          <button
+            class="primary-button"
+            type="button"
+            data-reception-empty-route
+          >
+            Tambah Jalur
+          </button>
+
+        </div>
+      `;
+    }
+
+    return `
+      <div class="reception-route-panel">
+
+        <div class="reception-section-head reception-section-head--compact">
+
+          <div>
+            <p class="section-kicker">
+              JALUR PENDAFTARAN
+            </p>
+
+            <h3>
+              Jalur pada ${escapeHtml(period.period_name)}
+            </h3>
+
+            <p>
+              Target masuk dan ringkasan calon peserta per jalur.
+            </p>
+          </div>
+
+          <button
+            class="secondary-button"
+            type="button"
+            data-reception-add-route-inline
+          >
+            <span class="material-symbols-rounded">
+              add
+            </span>
+
+            Tambah Jalur
+          </button>
+
+        </div>
+
+
+        <div class="reception-route-grid">
+
+          ${admissions
+            .map(
+              function (admission) {
+                const routeApplications =
+                  applications.filter(
+                    function (application) {
+                      return (
+                        String(
+                          application.admission_id
+                        ) ===
+                        String(
+                          admission.admission_id
+                        )
+                      );
+                    }
+                  );
+
+                return receptionRouteCard(
+                  admission,
+                  routeApplications
+                );
+              }
+            )
+            .join('')}
+
+        </div>
+
+      </div>
+    `;
+  }
+
+
+  function receptionRouteCard(
+    admission,
+    applications
+  ) {
+    const stats =
+      receptionDecisionStats(
+        applications
+      );
+
+    const targets =
+      Array.isArray(
+        admission.targets
+      )
+        ? admission.targets
+        : [];
+
+    return `
+      <article class="reception-route-card">
+
+        <div class="reception-route-card__head">
+
+          <span class="reception-route-card__icon">
+            <span class="material-symbols-rounded">
+              ${
+                admission.admission_type ===
+                'SOCIAL'
+                  ? 'volunteer_activism'
+                  : admission.admission_type ===
+                      'SCHOLARSHIP'
+                    ? 'workspace_premium'
+                    : 'groups'
+              }
+            </span>
+          </span>
+
+          <div>
+            <strong>
+              ${escapeHtml(admission.admission_name)}
+            </strong>
+
+            <small>
+              ${escapeHtml(admission.admission_id)}
+            </small>
+          </div>
+
+          <span
+            class="state-badge ${
+              String(
+                admission.status
+              ) ===
+              'ACTIVE'
+                ? 'is-ready'
+                : 'is-pending'
+            }"
+          >
+            ${
+              String(
+                admission.status
+              ) ===
+              'ACTIVE'
+                ? 'AKTIF'
+                : 'NONAKTIF'
+            }
+          </span>
+
+        </div>
+
+
+        <div class="reception-route-card__targets">
+
+          <span>
+            Target Masuk
+          </span>
+
+          <div>
+            ${
+              targets.length
+                ? targets
+                    .map(
+                      function (target) {
+                        return `
+                          <span class="reception-target-chip">
+                            ${escapeHtml(target.program_name)}
+                            <b>•</b>
+                            ${escapeHtml(target.level_name)}
+                          </span>
+                        `;
+                      }
+                    )
+                    .join('')
+                : `
+                  <span class="reception-target-chip is-empty">
+                    Target belum diatur
+                  </span>
+                `
+            }
+          </div>
+
+        </div>
+
+
+        <div class="reception-route-card__stats">
+
+          ${receptionRouteMetric(
+            'Calon',
+            stats.total
+          )}
+
+          ${receptionRouteMetric(
+            'Diterima',
+            stats.accepted
+          )}
+
+          ${receptionRouteMetric(
+            'Pertimbangan',
+            stats.consideration
+          )}
+
+          ${receptionRouteMetric(
+            'Bersyarat',
+            stats.conditional
+          )}
+
+          ${receptionRouteMetric(
+            'Tidak Diterima',
+            stats.rejected
+          )}
+
+        </div>
+
+
+        <div class="reception-route-card__actions">
+
+          <button
+            class="secondary-button compact-button"
+            type="button"
+            data-reception-route-applicants="${escapeHtml(admission.admission_id)}"
+          >
+            Lihat Pendaftar
+          </button>
+
+          <button
+            class="secondary-button compact-button"
+            type="button"
+            data-reception-edit-route="${escapeHtml(admission.admission_id)}"
+          >
+            <span class="material-symbols-rounded">
+              edit
+            </span>
+
+            Edit Jalur
+          </button>
+
+        </div>
+
+      </article>
+    `;
+  }
+
+
+  function receptionRouteMetric(
+    label,
+    value
+  ) {
+    return `
+      <span>
+        <small>
+          ${escapeHtml(label)}
+        </small>
+
+        <strong>
+          ${numberFormat(value)}
+        </strong>
+      </span>
+    `;
+  }
+
+
+  function renderReceptionApplicantsTab(
+    period,
+    data,
+    applications,
+    admissions
+  ) {
+    const routeFilter =
+      receptionNewUiState.route_filter ||
+      '';
+
+    return `
+      <div class="reception-applicant-panel">
+
+        <div class="reception-section-head reception-section-head--compact">
+
+          <div>
+            <p class="section-kicker">
+              CALON PESERTA
+            </p>
+
+            <h3>
+              Pendaftar ${escapeHtml(period.period_name)}
+            </h3>
+
+            <p>
+              Pendaftar tetap terpisah dari Master Peserta aktif.
+            </p>
+          </div>
+
+          <button
+            id="receptionApplicantNewButton"
+            class="primary-button"
+            type="button"
+          >
+            <span class="material-symbols-rounded">
+              person_add
+            </span>
+
+            Pendaftaran Baru
+          </button>
+
+        </div>
+
+
+        <div class="reception-applicant-toolbar">
+
+          <div class="participant-search">
+
+            <span class="material-symbols-rounded">
+              search
+            </span>
+
+            <input
+              id="receptionApplicantSearch"
+              type="search"
+              placeholder="Cari nama atau ID pendaftaran…"
+            >
+
+          </div>
+
+          <select
+            id="receptionApplicantRouteFilter"
+            class="select-input"
+          >
+            <option value="">
+              Semua Jalur
+            </option>
+
+            ${admissions
+              .map(
+                function (admission) {
+                  return `
+                    <option
+                      value="${escapeHtml(admission.admission_id)}"
+                      ${
+                        routeFilter ===
+                        admission.admission_id
+                          ? 'selected'
+                          : ''
+                      }
+                    >
+                      ${escapeHtml(admission.admission_name)}
+                    </option>
+                  `;
+                }
+              )
+              .join('')}
+          </select>
+
+          <select
+            id="receptionApplicantDecisionFilter"
+            class="select-input"
+          >
+            <option value="">
+              Semua Keputusan
+            </option>
+
+            <option value="accepted">
+              Diterima
+            </option>
+
+            <option value="consideration">
+              Pertimbangan
+            </option>
+
+            <option value="conditional">
+              Diterima Bersyarat
+            </option>
+
+            <option value="rejected">
+              Tidak Diterima
+            </option>
+          </select>
+
+        </div>
+
+
+        <div
+          id="receptionApplicantList"
+          class="application-list reception-applicant-list"
+        ></div>
+
+      </div>
+    `;
+  }
+
+
+  function renderReceptionApplicantRows(
+    data
+  ) {
+    const root =
+      document.getElementById(
+        'receptionApplicantList'
+      );
+
+    if (
+      !root
+    ) {
+      return;
+    }
+
+    const search =
+      String(
+        document
+          .getElementById(
+            'receptionApplicantSearch'
+          )
+          ?.value ||
+        ''
+      )
+        .trim()
+        .toLowerCase();
+
+    const route =
+      document
+        .getElementById(
+          'receptionApplicantRouteFilter'
+        )
+        ?.value ||
+      '';
+
+    const decision =
+      document
+        .getElementById(
+          'receptionApplicantDecisionFilter'
+        )
+        ?.value ||
+      '';
+
+    receptionNewUiState.route_filter =
+      route;
+
+    const rows =
+      receptionApplicationsForPeriod(
+        data,
+        receptionNewUiState.period_id
+      )
+        .filter(
+          function (application) {
+            if (
+              route &&
+              String(
+                application.admission_id
+              ) !==
+              String(
+                route
+              )
+            ) {
+              return false;
+            }
+
+            if (
+              decision &&
+              receptionDecisionBucket(
+                application
+              ) !==
+              decision
+            ) {
+              return false;
+            }
+
+            if (
+              search
+            ) {
+              const text = [
+                application.application_id,
+                application.full_name,
+                application.admission_name,
+                application.program_name,
+                application.level_name,
+                application.stage_label
+              ]
+                .join(
+                  ' '
+                )
+                .toLowerCase();
+
+              if (
+                !text.includes(
+                  search
+                )
+              ) {
+                return false;
+              }
+            }
+
+            return true;
+          }
+        );
+
+    if (
+      !rows.length
+    ) {
+      root.innerHTML = `
+        <div class="empty-state empty-state--large">
+
+          <span class="empty-state__icon">
+            <span class="material-symbols-rounded">
+              assignment_ind
+            </span>
+          </span>
+
+          <strong>
+            Tidak ada pendaftar
+          </strong>
+
+          <p>
+            Ubah filter atau tambahkan pendaftaran baru.
+          </p>
+
+        </div>
+      `;
+
+      return;
+    }
+
+    root.innerHTML =
+      rows
+        .map(
+          function (application) {
+            const bucket =
+              receptionDecisionBucket(
+                application
+              );
+
+            return `
+              <button
+                class="reception-applicant-row"
+                type="button"
+                data-reception-application="${escapeHtml(application.application_id)}"
+              >
+
+                <span class="reception-applicant-row__avatar">
+                  ${escapeHtml(initials(application.full_name))}
+                </span>
+
+                <span class="reception-applicant-row__identity">
+                  <strong>
+                    ${escapeHtml(application.full_name)}
+                  </strong>
+
+                  <small>
+                    ${escapeHtml(application.application_id)}
+                  </small>
+                </span>
+
+                <span class="reception-applicant-row__route">
+                  <strong>
+                    ${escapeHtml(application.admission_name || '—')}
+                  </strong>
+
+                  <small>
+                    ${escapeHtml(application.program_name || '—')}
+                    •
+                    ${escapeHtml(application.level_name || '—')}
+                  </small>
+                </span>
+
+                <span class="reception-applicant-row__decision ${escapeHtml(bucket)}">
+                  ${escapeHtml(receptionDecisionLabel(bucket))}
+                </span>
+
+                <span class="reception-applicant-row__stage">
+                  ${escapeHtml(application.stage_label || 'Pendaftaran')}
+                </span>
+
+                <span class="material-symbols-rounded">
+                  chevron_right
+                </span>
+
+              </button>
+            `;
+          }
+        )
+        .join('');
+
+    root
+      .querySelectorAll(
+        '[data-reception-application]'
+      )
+      .forEach(
+        function (button) {
+          button.addEventListener(
+            'click',
+            function () {
+              openApplicationDetail(
+                button.dataset.receptionApplication,
+                receptionModuleDataForPeriod(
+                  data,
+                  receptionNewUiState.period_id
+                )
+              );
+            }
+          );
+        }
+      );
+  }
+
+
+  function receptionDecisionStats(
+    applications
+  ) {
+    const result = {
+      total:
+        0,
+
+      accepted:
+        0,
+
+      consideration:
+        0,
+
+      conditional:
+        0,
+
+      rejected:
+        0
+    };
+
+    (
+      applications ||
+      []
+    ).forEach(
+      function (application) {
+        result.total +=
+          1;
+
+        const bucket =
+          receptionDecisionBucket(
+            application
+          );
+
+        result[bucket] +=
+          1;
+      }
+    );
+
+    return result;
+  }
+
+
+  function receptionDecisionBucket(
+    application
+  ) {
+    const decision =
+      String(
+        application.decision_status ||
+        application.decision ||
+        ''
+      )
+        .trim()
+        .toUpperCase();
+
+    const status =
+      String(
+        application.status ||
+        ''
+      )
+        .trim()
+        .toUpperCase();
+
+    const stage =
+      String(
+        application.stage_code ||
+        ''
+      )
+        .trim()
+        .toUpperCase();
+
+    const combined =
+      [
+        decision,
+        status
+      ].join(
+        '|'
+      );
+
+    if (
+      [
+        'CONDITIONAL_ACCEPTED',
+        'ACCEPTED_CONDITIONAL',
+        'ACCEPTED_WITH_CONDITION',
+        'DITERIMA_DENGAN_SYARAT',
+        'BERSYARAT'
+      ].some(
+        function (value) {
+          return combined.includes(
+            value
+          );
+        }
+      )
+    ) {
+      return 'conditional';
+    }
+
+    if (
+      [
+        'REJECTED',
+        'NOT_ACCEPTED',
+        'DITOLAK',
+        'TIDAK_DITERIMA'
+      ].some(
+        function (value) {
+          return combined.includes(
+            value
+          );
+        }
+      )
+    ) {
+      return 'rejected';
+    }
+
+    if (
+      [
+        'ACCEPTED',
+        'DITERIMA'
+      ].some(
+        function (value) {
+          return combined.includes(
+            value
+          );
+        }
+      ) ||
+      stage ===
+        'REREGISTRATION' ||
+      stage ===
+        'ACTIVE'
+    ) {
+      return 'accepted';
+    }
+
+    /*
+     * Seluruh pendaftar yang belum mendapat keputusan final
+     * dimasukkan ke Pertimbangan / masih proses.
+     * Ini menjaga total breakdown tetap mudah dibaca.
+     */
+    return 'consideration';
+  }
+
+
+  function receptionDecisionLabel(
+    bucket
+  ) {
+    const labels = {
+      accepted:
+        'Diterima',
+
+      consideration:
+        'Pertimbangan',
+
+      conditional:
+        'Diterima Bersyarat',
+
+      rejected:
+        'Tidak Diterima'
+    };
+
+    return labels[bucket] ||
+      'Pertimbangan';
+  }
+
+
+  function receptionApplicationsForPeriod(
+    data,
+    periodId
+  ) {
+    return (
+      data.applications ||
+      []
+    ).filter(
+      function (application) {
+        return (
+          String(
+            application.entry_period_id
+          ) ===
+          String(
+            periodId
+          )
+        );
+      }
+    );
+  }
+
+
+  function receptionAdmissionsForPeriod(
+    data,
+    periodId
+  ) {
+    return (
+      data.admissions ||
+      []
+    ).filter(
+      function (admission) {
+        return (
+          String(
+            admission.period_id
+          ) ===
+          String(
+            periodId
+          )
+        );
+      }
+    );
+  }
+
+
+  function receptionModuleDataForPeriod(
+    data,
+    periodId
+  ) {
+    return {
+      periods:
+        (
+          data.periods ||
+          []
+        ).filter(
+          function (period) {
+            return (
+              String(
+                period.period_id
+              ) ===
+              String(
+                periodId
+              )
+            );
+          }
+        ),
+
+      admissions:
+        receptionAdmissionsForPeriod(
+          data,
+          periodId
+        ),
+
+      applications:
+        receptionApplicationsForPeriod(
+          data,
+          periodId
+        )
+    };
+  }
+
+
+  function bindReceptionNew(
+    data,
+    selectedPeriod
+  ) {
+    document
+      .getElementById(
+        'receptionNewPeriodButton'
+      )
+      ?.addEventListener(
+        'click',
+        function () {
+          openReceptionPeriodForm(
+            null
+          );
+        }
+      );
+
+    document
+      .getElementById(
+        'receptionEmptyPeriodButton'
+      )
+      ?.addEventListener(
+        'click',
+        function () {
+          openReceptionPeriodForm(
+            null
+          );
+        }
+      );
+
+    document
+      .querySelectorAll(
+        '[data-reception-period]'
+      )
+      .forEach(
+        function (button) {
+          button.addEventListener(
+            'click',
+            function () {
+              receptionNewUiState.period_id =
+                button.dataset.receptionPeriod;
+
+              receptionNewUiState.route_filter =
+                '';
+
+              receptionNewUiState.tab =
+                'routes';
+
+              renderReceptionNew(
+                data
+              );
+            }
+          );
+        }
+      );
+
+    document
+      .querySelectorAll(
+        '[data-reception-tab]'
+      )
+      .forEach(
+        function (button) {
+          button.addEventListener(
+            'click',
+            function () {
+              receptionNewUiState.tab =
+                button.dataset.receptionTab;
+
+              renderReceptionNew(
+                data
+              );
+            }
+          );
+        }
+      );
+
+    if (
+      !selectedPeriod
+    ) {
+      return;
+    }
+
+    document
+      .getElementById(
+        'receptionNewApplicationButton'
+      )
+      ?.addEventListener(
+        'click',
+        function () {
+          openReceptionApplicationWizard(
+            data,
+            selectedPeriod.period_id
+          );
+        }
+      );
+
+    document
+      .getElementById(
+        'receptionApplicantNewButton'
+      )
+      ?.addEventListener(
+        'click',
+        function () {
+          openReceptionApplicationWizard(
+            data,
+            selectedPeriod.period_id
+          );
+        }
+      );
+
+    document
+      .getElementById(
+        'receptionAddRouteButton'
+      )
+      ?.addEventListener(
+        'click',
+        function () {
+          openReceptionRouteForm(
+            null,
+            selectedPeriod
+          );
+        }
+      );
+
+    document
+      .querySelector(
+        '[data-reception-add-route-inline]'
+      )
+      ?.addEventListener(
+        'click',
+        function () {
+          openReceptionRouteForm(
+            null,
+            selectedPeriod
+          );
+        }
+      );
+
+    document
+      .querySelector(
+        '[data-reception-empty-route]'
+      )
+      ?.addEventListener(
+        'click',
+        function () {
+          openReceptionRouteForm(
+            null,
+            selectedPeriod
+          );
+        }
+      );
+
+    document
+      .getElementById(
+        'receptionEditPeriodButton'
+      )
+      ?.addEventListener(
+        'click',
+        function () {
+          openReceptionPeriodForm(
+            selectedPeriod
+          );
+        }
+      );
+
+    document
+      .querySelectorAll(
+        '[data-reception-edit-route]'
+      )
+      .forEach(
+        function (button) {
+          button.addEventListener(
+            'click',
+            function () {
+              const admission =
+                (
+                  data.admissions ||
+                  []
+                ).find(
+                  function (row) {
+                    return (
+                      row.admission_id ===
+                      button.dataset.receptionEditRoute
+                    );
+                  }
+                );
+
+              if (
+                admission
+              ) {
+                openReceptionRouteForm(
+                  admission,
+                  selectedPeriod
+                );
+              }
+            }
+          );
+        }
+      );
+
+    document
+      .querySelectorAll(
+        '[data-reception-route-applicants]'
+      )
+      .forEach(
+        function (button) {
+          button.addEventListener(
+            'click',
+            function () {
+              receptionNewUiState.route_filter =
+                button.dataset.receptionRouteApplicants;
+
+              receptionNewUiState.tab =
+                'applicants';
+
+              renderReceptionNew(
+                data
+              );
+            }
+          );
+        }
+      );
+
+    [
+      'receptionApplicantSearch',
+      'receptionApplicantRouteFilter',
+      'receptionApplicantDecisionFilter'
+    ].forEach(
+      function (id) {
+        const element =
+          document.getElementById(
+            id
+          );
+
+        element?.addEventListener(
+          'input',
+          function () {
+            renderReceptionApplicantRows(
+              data
+            );
+          }
+        );
+
+        element?.addEventListener(
+          'change',
+          function () {
+            renderReceptionApplicantRows(
+              data
+            );
+          }
+        );
+      }
+    );
+
+    if (
+      receptionNewUiState.tab ===
+      'applicants'
+    ) {
+      renderReceptionApplicantRows(
+        data
+      );
+    }
+  }
+
+
+  function openReceptionApplicationWizard(
+    data,
+    periodId
+  ) {
+    const moduleData =
+      receptionModuleDataForPeriod(
+        data,
+        periodId
+      );
+
+    if (
+      !moduleData.admissions.length
+    ) {
+      toast(
+        'Buat Jalur Pendaftaran terlebih dahulu.'
+      );
+
+      return;
+    }
+
+    openApplicationWizard(
+      moduleData,
+      null
+    );
+  }
+
+
+  /* =========================================================
+   * PENERIMAAN BARU — FORM T.A.
+   * ========================================================= */
+
+  function openReceptionPeriodForm(
+    row
+  ) {
+    modal(
+      `
+        <div class="reception-form-head">
+
+          <span class="reception-form-head__icon">
+            <span class="material-symbols-rounded">
+              calendar_month
+            </span>
+          </span>
+
+          <div>
+            <p class="section-kicker">
+              TAHUN AJARAN
+            </p>
+
+            <h3>
+              ${
+                row
+                  ? 'Edit Tahun Ajaran'
+                  : 'Tambah Tahun Ajaran'
+              }
+            </h3>
+
+            <p>
+              User mengisi kode sederhana. ID dibuat otomatis oleh sistem.
+            </p>
+          </div>
+
+        </div>
+
+
+        <form
+          id="receptionPeriodForm"
+          class="form-grid reception-clean-form"
+        >
+
+          <input
+            type="hidden"
+            name="period_id"
+            value="${escapeHtml(row?.period_id || '')}"
+          >
+
+          ${inputField(
+            'Kode Periode',
+            'period_code',
+            row?.period_code ||
+              '',
+            true
+          )}
+
+          ${inputField(
+            'Nama Periode',
+            'period_name',
+            row?.period_name ||
+              '',
+            true
+          )}
+
+          <div class="reception-auto-info is-full">
+            <span class="material-symbols-rounded">
+              lock
+            </span>
+
+            <div>
+              <strong>
+                ID Sistem
+              </strong>
+
+              <small>
+                ${
+                  row?.period_id
+                    ? escapeHtml(row.period_id)
+                    : 'Contoh: 26/27 → TA-2627'
+                }
+              </small>
+            </div>
+          </div>
+
+          ${inputField(
+            'Tanggal Mulai',
+            'start_date',
+            dateInput(
+              row?.start_date
+            ),
+            false,
+            'date'
+          )}
+
+          ${inputField(
+            'Tanggal Selesai',
+            'end_date',
+            dateInput(
+              row?.end_date
+            ),
+            false,
+            'date'
+          )}
+
+          <label class="toggle-field is-full">
+
+            <input
+              type="checkbox"
+              name="is_active"
+              value="true"
+              ${
+                String(
+                  row?.is_active
+                ).toLowerCase() ===
+                'true'
+                  ? 'checked'
+                  : ''
+              }
+            >
+
+            <span class="toggle-field__control"></span>
+
+            <span>
+              <strong>
+                Jadikan T.A aktif
+              </strong>
+
+              <small>
+                T.A aktif sebelumnya otomatis dinonaktifkan.
+              </small>
+            </span>
+
+          </label>
+
+        </form>
+
+
+        <div class="modal-actions">
+
+          <button
+            class="secondary-button"
+            type="button"
+            data-modal-close
+          >
+            Batal
+          </button>
+
+          <button
+            id="saveReceptionPeriodButton"
+            class="primary-button"
+            type="button"
+          >
+            Simpan T.A.
+          </button>
+
+        </div>
+      `,
+      'sheet'
+    );
+
+    document
+      .getElementById(
+        'saveReceptionPeriodButton'
+      )
+      .addEventListener(
+        'click',
+        saveReceptionPeriod
+      );
+  }
+
+
+  function saveReceptionPeriod() {
+    const form =
+      document.getElementById(
+        'receptionPeriodForm'
+      );
+
+    if (
+      !form.reportValidity()
+    ) {
+      return;
+    }
+
+    const payload =
+      Object.fromEntries(
+        new FormData(
+          form
+        ).entries()
+      );
+
+    payload.is_active =
+      form
+        .querySelector(
+          '[name="is_active"]'
+        )
+        .checked;
+
+    const button =
+      document.getElementById(
+        'saveReceptionPeriodButton'
+      );
+
+    setButtonLoading(
+      button,
+      true,
+      'Menyimpan…'
+    );
+
+    startLoading();
+
+    window.EduApi
+      .request(
+        'period.save',
+        {
+          token:
+            getToken(),
+
+          payload:
+            payload
+        }
+      )
+      .then(
+        function (response) {
+          const rows =
+            Array.isArray(
+              response.data
+            )
+              ? response.data
+              : [];
+
+          const saved =
+            rows.find(
+              function (period) {
+                return (
+                  String(
+                    period.period_code
+                  ) ===
+                  String(
+                    payload.period_code
+                  )
+                );
+              }
+            );
+
+          if (
+            saved
+          ) {
+            receptionNewUiState.period_id =
+              saved.period_id;
+          }
+
+          invalidatePageCache(
+            'periods'
+          );
+
+          invalidatePageCache(
+            'admissions'
+          );
+
+          invalidatePageCache(
+            'reception_new'
+          );
+
+          invalidatePageCache(
+            'dashboard'
+          );
+
+          closeModal();
+
+          toast(
+            'Tahun Ajaran berhasil disimpan.'
+          );
+
+          loadReceptionNew(
+            true
+          );
+        }
+      )
+      .catch(
+        function (error) {
+          toast(
+            error.message
+          );
+        }
+      )
+      .finally(
+        function () {
+          setButtonLoading(
+            button,
+            false
+          );
+
+          stopLoading();
+        }
+      );
+  }
+
+
+  /* =========================================================
+   * PENERIMAAN BARU — FORM JALUR RAPIH
+   * ========================================================= */
+
+  function openReceptionRouteForm(
+    item,
+    period
+  ) {
+    const editing =
+      Boolean(
+        item
+      );
+
+    const targets =
+      editing &&
+      Array.isArray(
+        item.targets
+      ) &&
+      item.targets.length
+        ? item.targets
+        : [
+            {
+              target_id:
+                '',
+
+              program_code:
+                'SMP',
+
+              program_name:
+                'SMP / MTs',
+
+              level_code:
+                'K7',
+
+              level_name:
+                'Kelas 7',
+
+              default_entry_date:
+                ''
+            }
+          ];
+
+    modal(
+      `
+        <div class="reception-form-head">
+
+          <span class="reception-form-head__icon">
+            <span class="material-symbols-rounded">
+              account_tree
+            </span>
+          </span>
+
+          <div>
+            <p class="section-kicker">
+              JALUR PENDAFTARAN
+            </p>
+
+            <h3>
+              ${
+                editing
+                  ? 'Edit Jalur Pendaftaran'
+                  : 'Tambah Jalur Pendaftaran'
+              }
+            </h3>
+
+            <p>
+              ${escapeHtml(period.period_name)} • Program dan tingkat ditentukan Admin.
+            </p>
+          </div>
+
+        </div>
+
+
+        <form
+          id="receptionRouteForm"
+          class="reception-clean-form"
+        >
+
+          <input
+            type="hidden"
+            name="admission_id"
+            value="${escapeHtml(item?.admission_id || '')}"
+          >
+
+          <input
+            type="hidden"
+            name="period_id"
+            value="${escapeHtml(period.period_id)}"
+          >
+
+          <input
+            id="receptionRouteCode"
+            type="hidden"
+            name="admission_code"
+            value="${escapeHtml(item?.admission_code || '')}"
+          >
+
+          <input
+            id="receptionRouteName"
+            type="hidden"
+            name="admission_name"
+            value="${escapeHtml(item?.admission_name || '')}"
+          >
+
+          <input
+            id="receptionRouteType"
+            type="hidden"
+            name="admission_type"
+            value="${escapeHtml(item?.admission_type || '')}"
+          >
+
+
+          <section class="reception-form-section">
+
+            <div class="reception-form-section__head">
+              <span class="reception-form-section__number">
+                1
+              </span>
+
+              <div>
+                <strong>
+                  Identitas Jalur
+                </strong>
+
+                <small>
+                  T.A dan ID sistem tidak perlu diketik ulang.
+                </small>
+              </div>
+            </div>
+
+            <div class="reception-route-identity-grid">
+
+              <div class="reception-readonly-field">
+                <span>
+                  Tahun Ajaran
+                </span>
+
+                <strong>
+                  ${escapeHtml(period.period_name)}
+                </strong>
+
+                <small>
+                  ${escapeHtml(period.period_id)} • dikunci
+                </small>
+              </div>
+
+              <label class="field">
+
+                <span>
+                  Jalur Pendaftaran
+                  <b class="required-mark">*</b>
+                </span>
+
+                <select
+                  id="receptionRoutePreset"
+                  class="select-input"
+                  ${editing ? 'disabled' : ''}
+                  required
+                >
+                  <option value="">
+                    Pilih jalur
+                  </option>
+
+                  ${renderAdmissionPresetOptions(
+                    item?.admission_code
+                  )}
+                </select>
+
+              </label>
+
+            </div>
+
+            <div
+              id="receptionCustomRoute"
+              class="custom-admission-fields"
+              hidden
+            >
+              ${inputField(
+                'Nama Jalur Lainnya',
+                'reception_custom_name',
+                '',
+                false
+              )}
+
+              ${inputField(
+                'Kode Singkat',
+                'reception_custom_code',
+                '',
+                false
+              )}
+            </div>
+
+            <div class="reception-route-meta">
+
+              <span>
+                <small>
+                  Jalur
+                </small>
+
+                <strong id="receptionRoutePreviewName">
+                  ${escapeHtml(item?.admission_name || 'Belum dipilih')}
+                </strong>
+              </span>
+
+              <span>
+                <small>
+                  ID Otomatis
+                </small>
+
+                <strong id="receptionRoutePreviewId">
+                  ${escapeHtml(item?.admission_id || 'Akan dibuat sistem')}
+                </strong>
+              </span>
+
+              <span class="reception-lock-chip">
+                <span class="material-symbols-rounded">
+                  lock
+                </span>
+
+                Otomatis
+              </span>
+
+            </div>
+
+          </section>
+
+
+          <section class="reception-form-section">
+
+            <div class="reception-form-section__head">
+
+              <span class="reception-form-section__number">
+                2
+              </span>
+
+              <div>
+                <strong>
+                  Target Masuk
+                </strong>
+
+                <small>
+                  Program / Jenjang dan Tingkat ditetapkan di sini.
+                </small>
+              </div>
+
+              <button
+                id="receptionAddTargetButton"
+                class="secondary-button compact-button reception-section-action"
+                type="button"
+              >
+                <span class="material-symbols-rounded">
+                  add
+                </span>
+
+                Tambah Target
+              </button>
+
+            </div>
+
+            <div
+              id="admissionTargetEditor"
+              class="target-editor-list reception-target-editor"
+            >
+              ${renderAdmissionTargetEditorRows(
+                targets
+              )}
+            </div>
+
+          </section>
+
+
+          <section class="reception-form-section">
+
+            <div class="reception-form-section__head">
+
+              <span class="reception-form-section__number">
+                3
+              </span>
+
+              <div>
+                <strong>
+                  Periode Pendaftaran
+                </strong>
+
+                <small>
+                  Opsional. Atur jika jalur hanya dibuka pada tanggal tertentu.
+                </small>
+              </div>
+
+            </div>
+
+            <div class="form-grid">
+              ${inputField(
+                'Tanggal Mulai',
+                'start_date',
+                dateInput(item?.start_date),
+                false,
+                'date'
+              )}
+
+              ${inputField(
+                'Tanggal Selesai',
+                'end_date',
+                dateInput(item?.end_date),
+                false,
+                'date'
+              )}
+            </div>
+
+          </section>
+
+
+          <section class="reception-form-section">
+
+            <div class="reception-form-section__head">
+
+              <span class="reception-form-section__number">
+                4
+              </span>
+
+              <div>
+                <strong>
+                  Status Jalur
+                </strong>
+
+                <small>
+                  Jalur nonaktif tetap tersimpan tetapi tidak digunakan untuk pendaftaran baru.
+                </small>
+              </div>
+
+            </div>
+
+            <label class="field reception-status-field">
+              <span>
+                Status
+              </span>
+
+              <select
+                class="select-input"
+                name="status"
+              >
+                <option
+                  value="ACTIVE"
+                  ${
+                    String(item?.status || 'ACTIVE') ===
+                    'ACTIVE'
+                      ? 'selected'
+                      : ''
+                  }
+                >
+                  Aktif
+                </option>
+
+                <option
+                  value="INACTIVE"
+                  ${
+                    String(item?.status || '') ===
+                    'INACTIVE'
+                      ? 'selected'
+                      : ''
+                  }
+                >
+                  Tidak Aktif
+                </option>
+              </select>
+            </label>
+
+          </section>
+
+        </form>
+
+
+        <div class="modal-actions reception-modal-actions">
+
+          <button
+            class="secondary-button"
+            type="button"
+            data-modal-close
+          >
+            Batal
+          </button>
+
+          <button
+            id="saveReceptionRouteButton"
+            class="primary-button"
+            type="button"
+          >
+            Simpan Jalur
+          </button>
+
+        </div>
+      `,
+      'sheet'
+    );
+
+    if (
+      !editing
+    ) {
+      bindReceptionRoutePreset(
+        period
+      );
+    }
+
+    bindAdmissionTargetEditor();
+
+    document
+      .getElementById(
+        'receptionAddTargetButton'
+      )
+      .addEventListener(
+        'click',
+        addAdmissionTargetRow
+      );
+
+    document
+      .getElementById(
+        'saveReceptionRouteButton'
+      )
+      .addEventListener(
+        'click',
+        function () {
+          saveReceptionRoute(
+            period
+          );
+        }
+      );
+  }
+
+
+  function bindReceptionRoutePreset(
+    period
+  ) {
+    const presetSelect =
+      document.getElementById(
+        'receptionRoutePreset'
+      );
+
+    const customRoot =
+      document.getElementById(
+        'receptionCustomRoute'
+      );
+
+    const customName =
+      document.querySelector(
+        '[name="reception_custom_name"]'
+      );
+
+    const customCode =
+      document.querySelector(
+        '[name="reception_custom_code"]'
+      );
+
+    function sync() {
+      const preset =
+        findAdmissionPreset(
+          presetSelect.value
+        );
+
+      const custom =
+        preset &&
+        preset.code ===
+        'OTHER';
+
+      customRoot.hidden =
+        !custom;
+
+      customName.required =
+        Boolean(
+          custom
+        );
+
+      customCode.required =
+        Boolean(
+          custom
+        );
+
+      const code =
+        custom
+          ? String(
+              customCode.value ||
+              ''
+            )
+              .trim()
+              .toUpperCase()
+              .replace(
+                /[^A-Z0-9]/g,
+                ''
+              )
+              .substring(
+                0,
+                8
+              )
+          : preset
+            ? preset.code
+            : '';
+
+      const name =
+        custom
+          ? String(
+              customName.value ||
+              ''
+            ).trim()
+          : preset
+            ? preset.name
+            : '';
+
+      const type =
+        custom
+          ? 'CUSTOM'
+          : preset
+            ? preset.type
+            : '';
+
+      document
+        .getElementById(
+          'receptionRouteCode'
+        )
+        .value =
+          code;
+
+      document
+        .getElementById(
+          'receptionRouteName'
+        )
+        .value =
+          name;
+
+      document
+        .getElementById(
+          'receptionRouteType'
+        )
+        .value =
+          type;
+
+      document
+        .getElementById(
+          'receptionRoutePreviewName'
+        )
+        .textContent =
+          name ||
+          'Belum dipilih';
+
+      document
+        .getElementById(
+          'receptionRoutePreviewId'
+        )
+        .textContent =
+          receptionRoutePreviewId(
+            period,
+            code
+          );
+    }
+
+    presetSelect.addEventListener(
+      'change',
+      sync
+    );
+
+    customName.addEventListener(
+      'input',
+      sync
+    );
+
+    customCode.addEventListener(
+      'input',
+      function () {
+        customCode.value =
+          customCode.value
+            .toUpperCase()
+            .replace(
+              /[^A-Z0-9]/g,
+              ''
+            )
+            .substring(
+              0,
+              8
+            );
+
+        sync();
+      }
+    );
+
+    sync();
+  }
+
+
+  function receptionRoutePreviewId(
+    period,
+    code
+  ) {
+    if (
+      !code
+    ) {
+      return 'Akan dibuat sistem';
+    }
+
+    const digits =
+      String(
+        period.period_code ||
+        ''
+      ).replace(
+        /\D/g,
+        ''
+      );
+
+    if (
+      digits.length <
+      4
+    ) {
+      return (
+        'JP-…-' +
+        code
+      );
+    }
+
+    return (
+      'JP-' +
+      digits.slice(
+        0,
+        4
+      ) +
+      '-' +
+      code
+    );
+  }
+
+
+  function saveReceptionRoute(
+    period
+  ) {
+    const form =
+      document.getElementById(
+        'receptionRouteForm'
+      );
+
+    if (
+      !form.reportValidity()
+    ) {
+      return;
+    }
+
+    const payload =
+      Object.fromEntries(
+        new FormData(
+          form
+        ).entries()
+      );
+
+    payload.period_id =
+      period.period_id;
+
+    payload.targets =
+      collectAdmissionTargets();
+
+    const button =
+      document.getElementById(
+        'saveReceptionRouteButton'
+      );
+
+    setButtonLoading(
+      button,
+      true,
+      'Menyimpan…'
+    );
+
+    startLoading();
+
+    window.EduApi
+      .request(
+        'admission.save',
+        {
+          token:
+            getToken(),
+
+          payload:
+            payload
+        }
+      )
+      .then(
+        function () {
+          invalidatePageCache(
+            'admissions'
+          );
+
+          invalidatePageCache(
+            'reception_new'
+          );
+
+          closeModal();
+
+          toast(
+            'Jalur Pendaftaran berhasil disimpan.'
+          );
+
+          receptionNewUiState.tab =
+            'routes';
+
+          loadReceptionNew(
+            true
           );
         }
       )
@@ -11014,7 +14202,7 @@ window.EduApp = (function () {
         navigator
           .serviceWorker
           .register(
-            './service-worker.js?v=030'
+            './service-worker.js?v=031'
           )
           .catch(
             function (error) {
