@@ -1,7 +1,7 @@
 /**
  * ============================================================
  * EDUCATION FINANCE & MANAGEMENT PLATFORM
- * FRONTEND APP v0.3.1 — PENERIMAAN BARU (SAFE ADDITIVE)
+ * FRONTEND APP v0.3.2 — PENERIMAAN PESERTA (SAFE CANDIDATE)
  * ============================================================
  *
  * FOCUS:
@@ -58,6 +58,13 @@ window.EduApp = (function () {
       id: 'reception_new',
       label: 'Penerimaan Baru',
       icon: 'event_note',
+      permission: 'admission.view'
+    },
+
+    {
+      id: 'reception_hub',
+      label: 'Penerimaan Peserta',
+      icon: 'person_search',
       permission: 'admission.view'
     },
 
@@ -467,6 +474,22 @@ window.EduApp = (function () {
         'Diterima tidak sama dengan Aktif. Daftar ulang dan aktivasi tetap mengikuti Admission Workflow yang sudah dikunci.'
     },
 
+    reception_hub: {
+      eyebrow: 'PENERIMAAN PESERTA',
+      title: 'Panduan Penerimaan Peserta',
+      intro:
+        'Menu kandidat ini memakai alur tabel Tahun Ajaran lalu room detail T.A untuk Ringkasan, Jalur Pendaftaran, dan Pendaftar.',
+      steps: [
+        'Lihat semua Tahun Ajaran dalam satu tabel tracking.',
+        'Klik satu baris T.A untuk membuka room penerimaan tahun tersebut.',
+        'Gunakan Ringkasan untuk melihat posisi keputusan penerimaan.',
+        'Gunakan Jalur Pendaftaran untuk melihat target dan statistik per jalur.',
+        'Gunakan Pendaftar untuk membuka calon peserta tanpa menganggapnya otomatis aktif.'
+      ],
+      note:
+        'Pendaftar tetap berbeda dari Peserta Aktif. Hanya workflow tahap Aktif yang masuk Master Peserta.'
+    },
+
     participants: {
       eyebrow: 'MASTER PESERTA',
       title: 'Panduan Data Peserta',
@@ -567,6 +590,15 @@ window.EduApp = (function () {
     period_id: '',
     tab: 'routes',
     route_filter: ''
+  };
+
+  let receptionHubUiState = {
+    period_id: '',
+    tab: 'summary',
+    route_filter: '',
+    stage_filter: '',
+    decision_filter: '',
+    search: ''
   };
 
   let applicationWizardState =
@@ -1455,6 +1487,19 @@ window.EduApp = (function () {
     ) {
       renderComingSoon(
         page
+      );
+
+      return;
+    }
+
+    if (
+      pageId ===
+      'reception_hub'
+    ) {
+      loadReceptionHub(
+        Boolean(
+          config.force
+        )
       );
 
       return;
@@ -6922,6 +6967,20 @@ window.EduApp = (function () {
 
           if (
             activePage ===
+            'reception_hub'
+          ) {
+            receptionHubUiState.tab =
+              'applicants';
+
+            loadReceptionHub(
+              true
+            );
+
+            return;
+          }
+
+          if (
+            activePage ===
             'reception_new'
           ) {
             receptionNewUiState.tab =
@@ -10154,8 +10213,19 @@ window.EduApp = (function () {
           if (
             saved
           ) {
-            receptionNewUiState.period_id =
-              saved.period_id;
+            if (
+              activePage ===
+              'reception_hub'
+            ) {
+              receptionHubUiState.period_id =
+                saved.period_id;
+
+              receptionHubUiState.tab =
+                'summary';
+            } else {
+              receptionNewUiState.period_id =
+                saved.period_id;
+            }
           }
 
           invalidatePageCache(
@@ -10180,9 +10250,18 @@ window.EduApp = (function () {
             'Tahun Ajaran berhasil disimpan.'
           );
 
-          loadReceptionNew(
-            true
-          );
+          if (
+            activePage ===
+            'reception_hub'
+          ) {
+            loadReceptionHub(
+              true
+            );
+          } else {
+            loadReceptionNew(
+              true
+            );
+          }
         }
       )
       .catch(
@@ -10899,12 +10978,24 @@ window.EduApp = (function () {
             'Jalur Pendaftaran berhasil disimpan.'
           );
 
-          receptionNewUiState.tab =
-            'routes';
+          if (
+            activePage ===
+            'reception_hub'
+          ) {
+            receptionHubUiState.tab =
+              'routes';
 
-          loadReceptionNew(
-            true
-          );
+            loadReceptionHub(
+              true
+            );
+          } else {
+            receptionNewUiState.tab =
+              'routes';
+
+            loadReceptionNew(
+              true
+            );
+          }
         }
       )
       .catch(
@@ -10924,6 +11015,846 @@ window.EduApp = (function () {
           stopLoading();
         }
       );
+  }
+
+
+  /* =========================================================
+   * PENERIMAAN PESERTA — SAFE CANDIDATE v0.3.2
+   * ========================================================= */
+
+  function loadReceptionHub(force) {
+    const cached = getPageCache('reception_new');
+
+    if (cached && !force) {
+      renderReceptionHub(cached);
+      return;
+    }
+
+    if (!cached) {
+      showPageLoading('Membuka Penerimaan Peserta…');
+    }
+
+    startLoading();
+
+    Promise.all([
+      window.EduApi.request('period.list', { token: getToken() }),
+      window.EduApi.request('admission.list', { token: getToken() }),
+      window.EduApi.request('application.list', { token: getToken() })
+    ])
+      .then(function (responses) {
+        const data = {
+          periods: Array.isArray(responses[0].data) ? responses[0].data : [],
+          admissions: Array.isArray(responses[1].data) ? responses[1].data : [],
+          applications: Array.isArray(responses[2].data) ? responses[2].data : []
+        };
+
+        setPageCache('reception_new', data);
+        renderReceptionHub(data);
+      })
+      .catch(renderPageError)
+      .finally(stopLoading);
+  }
+
+
+  function renderReceptionHub(data) {
+    const periods = receptionSortedPeriods(data.periods);
+
+    if (
+      receptionHubUiState.period_id &&
+      !periods.some(function (period) {
+        return String(period.period_id) === String(receptionHubUiState.period_id);
+      })
+    ) {
+      receptionHubUiState.period_id = '';
+    }
+
+    if (!receptionHubUiState.period_id) {
+      renderReceptionHubIndex(periods, data);
+      return;
+    }
+
+    const period = periods.find(function (row) {
+      return String(row.period_id) === String(receptionHubUiState.period_id);
+    });
+
+    if (!period) {
+      receptionHubUiState.period_id = '';
+      renderReceptionHubIndex(periods, data);
+      return;
+    }
+
+    renderReceptionHubRoom(period, data);
+  }
+
+
+  function renderReceptionHubIndex(periods, data) {
+    const activePeriod =
+      periods.find(function (period) {
+        return String(period.is_active).toLowerCase() === 'true';
+      }) || periods[0] || null;
+
+    pageContent.innerHTML = `
+      ${receptionHubIndexHero(activePeriod, data)}
+
+      <section class="rx-section">
+        <div class="rx-section__head">
+          <div>
+            <p class="rx-kicker">MASTER PENERIMAAN</p>
+            <h3>Tahun Ajaran</h3>
+            <p>
+              Klik satu Tahun Ajaran untuk membuka room Ringkasan,
+              Jalur Pendaftaran, dan Pendaftar.
+            </p>
+          </div>
+
+          <button
+            id="rxAddPeriodButton"
+            class="rx-button rx-button--secondary"
+            type="button"
+          >
+            <span class="material-symbols-rounded">add</span>
+            Tambah Tahun Ajaran
+          </button>
+        </div>
+
+        ${
+          periods.length
+            ? `
+              <div class="rx-table" role="table">
+                <div class="rx-table__head" role="row">
+                  <span>Tahun Ajaran</span>
+                  <span>Status</span>
+                  <span>Jalur</span>
+                  <span>Calon</span>
+                  <span>Diterima</span>
+                  <span>Pertimbangan</span>
+                  <span>Bersyarat</span>
+                  <span>Tidak Diterima</span>
+                  <span>Aksi</span>
+                </div>
+
+                <div class="rx-table__body">
+                  ${periods.map(function (period) {
+                    return receptionHubPeriodRow(period, data);
+                  }).join('')}
+                </div>
+              </div>
+            `
+            : receptionHubEmpty(
+                'calendar_add_on',
+                'Belum ada Tahun Ajaran',
+                'Tambahkan Tahun Ajaran pertama untuk mulai mengelola penerimaan peserta.',
+                'rxEmptyPeriodButton',
+                'Tambah Tahun Ajaran'
+              )
+        }
+      </section>
+
+      <div class="rx-principle">
+        <span class="rx-principle__icon">
+          <span class="material-symbols-rounded">verified_user</span>
+        </span>
+        <div>
+          <strong>Pendaftar bukan Peserta Aktif</strong>
+          <p>
+            Diterima belum membuat calon peserta masuk Master Peserta.
+            Aktivasi tetap mengikuti workflow sampai tahap Aktif.
+          </p>
+        </div>
+      </div>
+    `;
+
+    bindReceptionHubIndex(data, activePeriod);
+  }
+
+
+  function receptionHubIndexHero(activePeriod, data) {
+    return `
+      <section class="rx-hero">
+        <div class="rx-hero__ring rx-hero__ring--a"></div>
+        <div class="rx-hero__ring rx-hero__ring--b"></div>
+
+        <div class="rx-hero__top">
+          <span class="rx-hero__icon">
+            <span class="material-symbols-rounded">person_search</span>
+          </span>
+
+          <span class="rx-hero__badge">
+            <span></span>
+            Kandidat Workspace
+          </span>
+        </div>
+
+        <div class="rx-hero__grid">
+          <div>
+            <p class="rx-hero__kicker">PENERIMAAN PESERTA</p>
+            <h2>Tracking penerimaan dalam satu alur yang jelas.</h2>
+            <p class="rx-hero__copy">
+              Mulai dari Tahun Ajaran, buka jalur, lalu pantau calon peserta
+              dan keputusan tanpa mencampurnya dengan Peserta Aktif.
+            </p>
+          </div>
+
+          <div class="rx-hero__side">
+            <div class="rx-hero__metrics">
+              ${receptionHubHeroMetric(
+                'calendar_month',
+                activePeriod ? activePeriod.period_name : '—',
+                'Tahun aktif'
+              )}
+              ${receptionHubHeroMetric(
+                'account_tree',
+                numberFormat((data.admissions || []).length),
+                'Total jalur'
+              )}
+              ${receptionHubHeroMetric(
+                'groups',
+                numberFormat((data.applications || []).length),
+                'Total calon'
+              )}
+            </div>
+
+            <div class="rx-hero__actions">
+              <button
+                id="rxHeroPeriodButton"
+                class="rx-hero-button rx-hero-button--secondary"
+                type="button"
+              >
+                <span class="material-symbols-rounded">add</span>
+                Tambah T.A.
+              </button>
+
+              <button
+                id="rxHeroApplicationButton"
+                class="rx-hero-button rx-hero-button--primary"
+                type="button"
+                ${activePeriod ? '' : 'disabled'}
+              >
+                <span class="material-symbols-rounded">person_add</span>
+                Pendaftaran Baru
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+
+  function receptionHubHeroMetric(icon, value, label) {
+    return `
+      <span class="rx-hero-metric">
+        <span class="material-symbols-rounded">${escapeHtml(icon)}</span>
+        <span>
+          <strong>${escapeHtml(String(value))}</strong>
+          <small>${escapeHtml(label)}</small>
+        </span>
+      </span>
+    `;
+  }
+
+
+  function receptionHubPeriodRow(period, data) {
+    const applications = receptionApplicationsForPeriod(data, period.period_id);
+    const stats = receptionDecisionStats(applications);
+    const routeCount = receptionAdmissionsForPeriod(data, period.period_id).length;
+    const active = String(period.is_active).toLowerCase() === 'true';
+
+    return `
+      <button
+        class="rx-table__row"
+        type="button"
+        data-rx-period="${escapeHtml(period.period_id)}"
+      >
+        <span class="rx-table__identity" data-label="Tahun Ajaran">
+          <span class="rx-table__identity-icon">
+            <span class="material-symbols-rounded">calendar_month</span>
+          </span>
+          <span>
+            <strong>${escapeHtml(period.period_name)}</strong>
+            <small>
+              ${escapeHtml(period.period_id)} •
+              ${dateText(period.start_date)} — ${dateText(period.end_date)}
+            </small>
+          </span>
+        </span>
+
+        <span data-label="Status">
+          ${receptionHubStatus(active)}
+        </span>
+
+        ${receptionHubCell('Jalur', routeCount, 'account_tree')}
+        ${receptionHubCell('Calon', stats.total, 'groups')}
+        ${receptionHubCell('Diterima', stats.accepted, 'check_circle')}
+        ${receptionHubCell('Pertimbangan', stats.consideration, 'schedule')}
+        ${receptionHubCell('Bersyarat', stats.conditional, 'verified')}
+        ${receptionHubCell('Tidak Diterima', stats.rejected, 'cancel')}
+
+        <span class="rx-table__open" data-label="Aksi">
+          <span>Buka</span>
+          <span class="material-symbols-rounded">arrow_forward</span>
+        </span>
+      </button>
+    `;
+  }
+
+
+  function receptionHubCell(label, value, icon) {
+    return `
+      <span class="rx-table__metric" data-label="${escapeHtml(label)}">
+        <span class="material-symbols-rounded">${escapeHtml(icon)}</span>
+        <strong>${numberFormat(value)}</strong>
+      </span>
+    `;
+  }
+
+
+  function receptionHubStatus(active) {
+    return `
+      <span class="rx-status ${active ? 'is-active' : 'is-inactive'}">
+        <span></span>
+        ${active ? 'Aktif' : 'Nonaktif'}
+      </span>
+    `;
+  }
+
+
+  function bindReceptionHubIndex(data, activePeriod) {
+    ['rxAddPeriodButton', 'rxEmptyPeriodButton', 'rxHeroPeriodButton']
+      .forEach(function (id) {
+        document.getElementById(id)?.addEventListener('click', function () {
+          openReceptionHubPeriodForm(null);
+        });
+      });
+
+    document.getElementById('rxHeroApplicationButton')
+      ?.addEventListener('click', function () {
+        if (activePeriod) {
+          openReceptionApplicationWizard(data, activePeriod.period_id);
+        }
+      });
+
+    document.querySelectorAll('[data-rx-period]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        receptionHubUiState.period_id = button.dataset.rxPeriod;
+        receptionHubUiState.tab = 'summary';
+        receptionHubUiState.route_filter = '';
+        receptionHubUiState.stage_filter = '';
+        receptionHubUiState.decision_filter = '';
+        receptionHubUiState.search = '';
+        renderReceptionHub(data);
+      });
+    });
+  }
+
+
+  function renderReceptionHubRoom(period, data) {
+    const applications = receptionApplicationsForPeriod(data, period.period_id);
+    const admissions = receptionAdmissionsForPeriod(data, period.period_id);
+    const stats = receptionDecisionStats(applications);
+
+    pageContent.innerHTML = `
+      <div class="rx-breadcrumb">
+        <button id="rxBackButton" class="rx-back" type="button">
+          <span class="material-symbols-rounded">arrow_back</span>
+          Semua Tahun Ajaran
+        </button>
+        <span class="material-symbols-rounded">chevron_right</span>
+        <strong>${escapeHtml(period.period_name)}</strong>
+      </div>
+
+      ${receptionHubRoomHero(period, stats, admissions.length)}
+
+      <div class="rx-principle rx-principle--room">
+        <span class="rx-principle__icon">
+          <span class="material-symbols-rounded">info</span>
+        </span>
+        <div>
+          <strong>Keputusan penerimaan berbeda dari status Peserta Aktif</strong>
+          <p>
+            Diterima, Pertimbangan, Bersyarat, dan Tidak Diterima adalah hasil penerimaan.
+            Hanya tahap Aktif yang masuk Master Peserta.
+          </p>
+        </div>
+      </div>
+
+      <nav class="rx-tabs">
+        ${receptionHubTab('summary', 'Ringkasan', 'analytics', receptionHubUiState.tab === 'summary')}
+        ${receptionHubTab('routes', 'Jalur Pendaftaran', 'account_tree', receptionHubUiState.tab === 'routes', admissions.length)}
+        ${receptionHubTab('applicants', 'Pendaftar', 'groups', receptionHubUiState.tab === 'applicants', applications.length)}
+      </nav>
+
+      <div>
+        ${
+          receptionHubUiState.tab === 'routes'
+            ? renderReceptionHubRoutes(period, admissions, applications)
+            : receptionHubUiState.tab === 'applicants'
+              ? renderReceptionHubApplicants(period, admissions, applications)
+              : renderReceptionHubSummary(period, admissions, applications, stats)
+        }
+      </div>
+    `;
+
+    bindReceptionHubRoom(period, data, admissions, applications);
+  }
+
+
+  function receptionHubRoomHero(period, stats, routeCount) {
+    const active = String(period.is_active).toLowerCase() === 'true';
+
+    return `
+      <section class="rx-room-hero">
+        <div>
+          <div class="rx-room-hero__top">
+            <span class="rx-room-hero__icon">
+              <span class="material-symbols-rounded">calendar_month</span>
+            </span>
+            ${receptionHubStatus(active)}
+          </div>
+          <p class="rx-room-hero__kicker">ROOM PENERIMAAN</p>
+          <h2>${escapeHtml(period.period_name)}</h2>
+          <p class="rx-room-hero__copy">
+            ${dateText(period.start_date)} — ${dateText(period.end_date)} •
+            ${escapeHtml(period.period_id)}
+          </p>
+        </div>
+
+        <div class="rx-room-hero__side">
+          <div class="rx-room-hero__metrics">
+            ${receptionHubRoomMetric('Calon', stats.total)}
+            ${receptionHubRoomMetric('Jalur', routeCount)}
+            ${receptionHubRoomMetric('Diterima', stats.accepted)}
+          </div>
+          <div class="rx-room-hero__actions">
+            <button id="rxAddRouteButton" class="rx-hero-button rx-hero-button--secondary" type="button">
+              <span class="material-symbols-rounded">add</span>
+              Tambah Jalur
+            </button>
+            <button id="rxNewApplicationButton" class="rx-hero-button rx-hero-button--primary" type="button">
+              <span class="material-symbols-rounded">person_add</span>
+              Pendaftaran Baru
+            </button>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+
+  function receptionHubRoomMetric(label, value) {
+    return `
+      <span>
+        <small>${escapeHtml(label)}</small>
+        <strong>${numberFormat(value)}</strong>
+      </span>
+    `;
+  }
+
+
+  function receptionHubTab(tab, label, icon, active, count) {
+    return `
+      <button
+        class="rx-tab ${active ? 'is-active' : ''}"
+        type="button"
+        data-rx-tab="${escapeHtml(tab)}"
+      >
+        <span class="material-symbols-rounded">${escapeHtml(icon)}</span>
+        <strong>${escapeHtml(label)}</strong>
+        ${Number.isFinite(Number(count)) ? `<span class="rx-tab__count">${numberFormat(count)}</span>` : ''}
+      </button>
+    `;
+  }
+
+
+  function renderReceptionHubSummary(period, admissions, applications, stats) {
+    const activeCount = applications.filter(function (row) {
+      return String(row.stage_code).toUpperCase() === 'ACTIVE';
+    }).length;
+
+    return `
+      <section class="rx-section rx-section--inside">
+        <div class="rx-section__head">
+          <div>
+            <p class="rx-kicker">RINGKASAN</p>
+            <h3>Posisi Penerimaan</h3>
+            <p>Calon Siswa adalah total pendaftar, bukan jumlah Peserta Aktif.</p>
+          </div>
+        </div>
+
+        <div class="rx-summary-grid">
+          ${receptionHubSummaryCard('Calon Siswa', stats.total, 'Seluruh pendaftar pada T.A ini', 'groups', 'primary')}
+          ${receptionHubSummaryCard('Diterima', stats.accepted, 'Sudah mendapat keputusan diterima', 'check_circle', 'success')}
+          ${receptionHubSummaryCard('Pertimbangan', stats.consideration, 'Masih diproses / belum final', 'schedule', 'warning')}
+          ${receptionHubSummaryCard('Diterima Bersyarat', stats.conditional, 'Diterima dengan syarat tertentu', 'verified', 'gold')}
+          ${receptionHubSummaryCard('Tidak Diterima', stats.rejected, 'Keputusan akhir tidak diterima', 'cancel', 'danger')}
+        </div>
+
+        <div class="rx-summary-bottom">
+          ${receptionHubInfoCard('account_tree', 'Jalur Pendaftaran', admissions.length, `Terhubung ke ${period.period_name}`)}
+          ${receptionHubInfoCard('person_check', 'Sudah Aktif', activeCount, 'Benar-benar sudah mencapai tahap Aktif')}
+        </div>
+      </section>
+    `;
+  }
+
+
+  function receptionHubSummaryCard(label, value, description, icon, tone) {
+    return `
+      <article class="rx-summary-card is-${escapeHtml(tone)}">
+        <span class="rx-summary-card__icon">
+          <span class="material-symbols-rounded">${escapeHtml(icon)}</span>
+        </span>
+        <div>
+          <span class="rx-summary-card__label">${escapeHtml(label)}</span>
+          <strong class="rx-summary-card__value">${numberFormat(value)}</strong>
+          <p>${escapeHtml(description)}</p>
+        </div>
+      </article>
+    `;
+  }
+
+
+  function receptionHubInfoCard(icon, label, value, copy) {
+    return `
+      <article class="rx-info-card">
+        <span class="rx-info-card__icon">
+          <span class="material-symbols-rounded">${escapeHtml(icon)}</span>
+        </span>
+        <div>
+          <span>${escapeHtml(label)}</span>
+          <strong>${numberFormat(value)}</strong>
+          <p>${escapeHtml(copy)}</p>
+        </div>
+      </article>
+    `;
+  }
+
+
+  function renderReceptionHubRoutes(period, admissions, applications) {
+    return `
+      <section class="rx-section rx-section--inside">
+        <div class="rx-section__head">
+          <div>
+            <p class="rx-kicker">JALUR PENDAFTARAN</p>
+            <h3>Jalur ${escapeHtml(period.period_name)}</h3>
+            <p>Target masuk dan statistik keputusan per jalur.</p>
+          </div>
+          <button id="rxInlineAddRoute" class="rx-button rx-button--primary" type="button">
+            <span class="material-symbols-rounded">add</span>
+            Tambah Jalur
+          </button>
+        </div>
+
+        ${
+          admissions.length
+            ? `<div class="rx-route-list">${admissions.map(function (admission) {
+                return receptionHubRouteRow(admission, applications);
+              }).join('')}</div>`
+            : receptionHubEmpty(
+                'account_tree',
+                'Belum ada Jalur Pendaftaran',
+                'Tambahkan jalur untuk Tahun Ajaran ini.',
+                'rxEmptyRouteButton',
+                'Tambah Jalur'
+              )
+        }
+      </section>
+    `;
+  }
+
+
+  function receptionHubRouteRow(admission, periodApplications) {
+    const applications = periodApplications.filter(function (row) {
+      return String(row.admission_id) === String(admission.admission_id);
+    });
+    const stats = receptionDecisionStats(applications);
+    const targets = (admission.targets || []).filter(function (row) {
+      return String(row.status) !== 'DELETED';
+    });
+    const active = String(admission.status).toUpperCase() === 'ACTIVE';
+    const targetText = targets.length
+      ? targets.map(function (target) {
+          return `${target.program_name} • ${target.level_name}`;
+        }).join(' / ')
+      : 'Target belum diatur';
+
+    return `
+      <article class="rx-route-row">
+        <div class="rx-route-row__identity">
+          <span class="rx-route-row__icon">
+            <span class="material-symbols-rounded">account_tree</span>
+          </span>
+          <div>
+            <strong>${escapeHtml(admission.admission_name)}</strong>
+            <small>${escapeHtml(admission.admission_id)}</small>
+          </div>
+        </div>
+
+        <div class="rx-route-row__target">
+          <span>Target Masuk</span>
+          <strong>${escapeHtml(targetText)}</strong>
+          <small>${numberFormat(targets.length)} target</small>
+        </div>
+
+        <div class="rx-route-row__stats">
+          ${receptionHubRouteStat('Calon', stats.total)}
+          ${receptionHubRouteStat('Diterima', stats.accepted)}
+          ${receptionHubRouteStat('Pertimbangan', stats.consideration)}
+          ${receptionHubRouteStat('Bersyarat', stats.conditional)}
+          ${receptionHubRouteStat('Tidak', stats.rejected)}
+        </div>
+
+        <div class="rx-route-row__end">
+          ${receptionHubStatus(active)}
+          <div class="rx-route-row__actions">
+            <button
+              class="rx-icon-button"
+              type="button"
+              title="Lihat pendaftar"
+              data-rx-route-applicants="${escapeHtml(admission.admission_id)}"
+            >
+              <span class="material-symbols-rounded">groups</span>
+            </button>
+            <button
+              class="rx-icon-button"
+              type="button"
+              title="Edit jalur"
+              data-rx-edit-route="${escapeHtml(admission.admission_id)}"
+            >
+              <span class="material-symbols-rounded">edit</span>
+            </button>
+          </div>
+        </div>
+      </article>
+    `;
+  }
+
+
+  function receptionHubRouteStat(label, value) {
+    return `
+      <span>
+        <small>${escapeHtml(label)}</small>
+        <strong>${numberFormat(value)}</strong>
+      </span>
+    `;
+  }
+
+
+  function renderReceptionHubApplicants(period, admissions, applications) {
+    return `
+      <section class="rx-section rx-section--inside">
+        <div class="rx-section__head">
+          <div>
+            <p class="rx-kicker">DATA PENDAFTAR</p>
+            <h3>Calon Peserta ${escapeHtml(period.period_name)}</h3>
+            <p>Cari dan filter calon peserta berdasarkan jalur, tahap, dan keputusan.</p>
+          </div>
+          <button id="rxInlineNewApplication" class="rx-button rx-button--primary" type="button">
+            <span class="material-symbols-rounded">person_add</span>
+            Pendaftaran Baru
+          </button>
+        </div>
+
+        <div class="rx-filters">
+          <label class="rx-search">
+            <span class="material-symbols-rounded">search</span>
+            <input id="rxApplicantSearch" type="search" placeholder="Cari nama atau nomor pendaftaran…" value="${escapeHtml(receptionHubUiState.search)}">
+          </label>
+
+          <select id="rxRouteFilter" class="rx-select">
+            <option value="">Semua Jalur</option>
+            ${admissions.map(function (admission) {
+              return `<option value="${escapeHtml(admission.admission_id)}" ${String(receptionHubUiState.route_filter) === String(admission.admission_id) ? 'selected' : ''}>${escapeHtml(admission.admission_name)}</option>`;
+            }).join('')}
+          </select>
+
+          <select id="rxStageFilter" class="rx-select">
+            <option value="">Semua Tahap</option>
+            ${['Pendaftaran','Verifikasi Berkas','Proses Administrasi','Proses Wawancara','Tes / Seleksi','Keputusan','Daftar Ulang','Aktif'].map(function (label) {
+              return `<option value="${escapeHtml(label)}" ${receptionHubUiState.stage_filter === label ? 'selected' : ''}>${escapeHtml(label)}</option>`;
+            }).join('')}
+          </select>
+
+          <select id="rxDecisionFilter" class="rx-select">
+            <option value="">Semua Keputusan</option>
+            <option value="accepted" ${receptionHubUiState.decision_filter === 'accepted' ? 'selected' : ''}>Diterima</option>
+            <option value="consideration" ${receptionHubUiState.decision_filter === 'consideration' ? 'selected' : ''}>Pertimbangan</option>
+            <option value="conditional" ${receptionHubUiState.decision_filter === 'conditional' ? 'selected' : ''}>Diterima Bersyarat</option>
+            <option value="rejected" ${receptionHubUiState.decision_filter === 'rejected' ? 'selected' : ''}>Tidak Diterima</option>
+          </select>
+        </div>
+
+        <div id="rxApplicantList">
+          ${renderReceptionHubApplicantRows(applications)}
+        </div>
+      </section>
+    `;
+  }
+
+
+  function renderReceptionHubApplicantRows(applications) {
+    const search = String(receptionHubUiState.search || '').trim().toLowerCase();
+    const filtered = applications.filter(function (application) {
+      if (receptionHubUiState.route_filter && String(application.admission_id) !== String(receptionHubUiState.route_filter)) return false;
+      if (receptionHubUiState.stage_filter && String(application.stage_label) !== String(receptionHubUiState.stage_filter)) return false;
+      const bucket = receptionDecisionBucket(application);
+      if (receptionHubUiState.decision_filter && bucket !== receptionHubUiState.decision_filter) return false;
+      if (search) {
+        const text = [application.application_id, application.full_name, application.admission_name, application.program_name, application.level_name, application.stage_label].join(' ').toLowerCase();
+        if (!text.includes(search)) return false;
+      }
+      return true;
+    });
+
+    if (!filtered.length) {
+      return receptionHubEmpty(
+        'person_search',
+        'Pendaftar tidak ditemukan',
+        'Ubah filter atau tambahkan pendaftaran baru.'
+      );
+    }
+
+    return `
+      <div class="rx-applicant-list">
+        ${filtered.map(function (application) {
+          const bucket = receptionDecisionBucket(application);
+          return `
+            <button
+              class="rx-applicant-row"
+              type="button"
+              data-rx-application="${escapeHtml(application.application_id)}"
+            >
+              <span class="rx-applicant-row__identity">
+                <span class="rx-applicant-row__avatar">${escapeHtml(initials(application.full_name))}</span>
+                <span>
+                  <strong>${escapeHtml(application.full_name)}</strong>
+                  <small>${escapeHtml(application.application_id)}</small>
+                </span>
+              </span>
+              <span class="rx-applicant-row__route">
+                <strong>${escapeHtml(application.admission_name || '—')}</strong>
+                <small>${escapeHtml([application.program_name, application.level_name].filter(Boolean).join(' • ') || 'Target belum tersedia')}</small>
+              </span>
+              <span class="rx-pill">${escapeHtml(application.stage_label || '—')}</span>
+              <span class="rx-decision is-${escapeHtml(bucket)}">${escapeHtml(receptionDecisionLabel(bucket))}</span>
+              <span class="material-symbols-rounded rx-applicant-row__arrow">chevron_right</span>
+            </button>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+
+  function receptionHubEmpty(icon, title, copy, buttonId, buttonLabel) {
+    return `
+      <div class="rx-empty">
+        <span class="rx-empty__icon">
+          <span class="material-symbols-rounded">${escapeHtml(icon)}</span>
+        </span>
+        <strong>${escapeHtml(title)}</strong>
+        <p>${escapeHtml(copy)}</p>
+        ${buttonId ? `<button id="${escapeHtml(buttonId)}" class="rx-button rx-button--primary" type="button"><span class="material-symbols-rounded">add</span>${escapeHtml(buttonLabel)}</button>` : ''}
+      </div>
+    `;
+  }
+
+
+  function bindReceptionHubRoom(period, data, admissions, applications) {
+    document.getElementById('rxBackButton')?.addEventListener('click', function () {
+      receptionHubUiState.period_id = '';
+      receptionHubUiState.tab = 'summary';
+      receptionHubUiState.route_filter = '';
+      renderReceptionHub(data);
+    });
+
+    document.querySelectorAll('[data-rx-tab]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        receptionHubUiState.tab = button.dataset.rxTab;
+        renderReceptionHub(data);
+      });
+    });
+
+    ['rxAddRouteButton', 'rxInlineAddRoute', 'rxEmptyRouteButton']
+      .forEach(function (id) {
+        document.getElementById(id)?.addEventListener('click', function () {
+          openReceptionHubRouteForm(null, period);
+        });
+      });
+
+    ['rxNewApplicationButton', 'rxInlineNewApplication']
+      .forEach(function (id) {
+        document.getElementById(id)?.addEventListener('click', function () {
+          openReceptionApplicationWizard(data, period.period_id);
+        });
+      });
+
+    document.querySelectorAll('[data-rx-edit-route]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        const admission = admissions.find(function (row) {
+          return String(row.admission_id) === String(button.dataset.rxEditRoute);
+        });
+        if (admission) openReceptionHubRouteForm(admission, period);
+      });
+    });
+
+    document.querySelectorAll('[data-rx-route-applicants]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        receptionHubUiState.route_filter = button.dataset.rxRouteApplicants;
+        receptionHubUiState.tab = 'applicants';
+        renderReceptionHub(data);
+      });
+    });
+
+    const search = document.getElementById('rxApplicantSearch');
+    const route = document.getElementById('rxRouteFilter');
+    const stage = document.getElementById('rxStageFilter');
+    const decision = document.getElementById('rxDecisionFilter');
+
+    function refilter() {
+      receptionHubUiState.search = search?.value || '';
+      receptionHubUiState.route_filter = route?.value || '';
+      receptionHubUiState.stage_filter = stage?.value || '';
+      receptionHubUiState.decision_filter = decision?.value || '';
+      const root = document.getElementById('rxApplicantList');
+      if (root) {
+        root.innerHTML = renderReceptionHubApplicantRows(applications);
+        bindReceptionHubApplicantRows(data, period);
+      }
+    }
+
+    search?.addEventListener('input', refilter);
+    route?.addEventListener('change', refilter);
+    stage?.addEventListener('change', refilter);
+    decision?.addEventListener('change', refilter);
+
+    bindReceptionHubApplicantRows(data, period);
+  }
+
+
+  function bindReceptionHubApplicantRows(data, period) {
+    document.querySelectorAll('[data-rx-application]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        openApplicationDetail(
+          button.dataset.rxApplication,
+          receptionModuleDataForPeriod(data, period.period_id)
+        );
+      });
+    });
+  }
+
+
+
+
+  function openReceptionHubPeriodForm(row) {
+    document.body.classList.add('rx-enhanced-modal');
+    openReceptionPeriodForm(row);
+  }
+
+
+  function openReceptionHubRouteForm(item, period) {
+    document.body.classList.add('rx-enhanced-modal');
+    openReceptionRouteForm(item, period);
   }
 
 
@@ -14033,6 +14964,10 @@ window.EduApp = (function () {
 
 
   function closeModal() {
+    document.body.classList.remove(
+      'rx-enhanced-modal'
+    );
+
     modalBackdrop.hidden =
       true;
 
@@ -14202,7 +15137,7 @@ window.EduApp = (function () {
         navigator
           .serviceWorker
           .register(
-            './service-worker.js?v=031'
+            './service-worker.js?v=032'
           )
           .catch(
             function (error) {
