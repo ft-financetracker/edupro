@@ -1,7 +1,7 @@
 /**
  * ============================================================
  * EDUCATION FINANCE & MANAGEMENT PLATFORM
- * FRONTEND APP v0.3.3 — PENERIMAAN PESERTA (SAFE CANDIDATE)
+ * FRONTEND APP v0.3.4 — PERFORMANCE / IDEMPOTENCY — PENERIMAAN PESERTA (SAFE CANDIDATE)
  * ============================================================
  *
  * FOCUS:
@@ -5172,6 +5172,12 @@ window.EduApp = (function () {
       pending_file_promises:
         [],
 
+      autosave_promise:
+        null,
+
+      file_sync_chains:
+        {},
+
       server_documents:
         Array.isArray(
           opts.server_documents
@@ -5371,6 +5377,14 @@ window.EduApp = (function () {
               1;
 
             saveApplicationDraftOffline();
+
+            /*
+             * PERFORMANCE:
+             * pindah step langsung.
+             * Save server berjalan di background dan tidak
+             * memblokir form.
+             */
+            queueApplicationWizardAutosave();
 
             renderApplicationWizard();
 
@@ -6725,6 +6739,15 @@ window.EduApp = (function () {
                           file.name +
                           ' • tersimpan di perangkat';
                       }
+
+                      /*
+                       * File sudah aman secara lokal.
+                       * Upload server berjalan background.
+                       */
+                      queueApplicationWizardSingleFileUpload(
+                        type,
+                        stateLabel
+                      );
                     }
                   )
                   .catch(
@@ -7003,6 +7026,344 @@ window.EduApp = (function () {
   }
 
 
+  function wizardApiRequestWithRetry(
+    action,
+    params,
+    retries
+  ) {
+    const remaining =
+      Number(
+        retries == null
+          ? 1
+          : retries
+      );
+
+    return window.EduApi
+      .request(
+        action,
+        params
+      )
+      .catch(
+        function (error) {
+          if (
+            remaining <=
+            0
+          ) {
+            throw error;
+          }
+
+          return new Promise(
+            function (resolve) {
+              window.setTimeout(
+                resolve,
+                1200
+              );
+            }
+          ).then(
+            function () {
+              return wizardApiRequestWithRetry(
+                action,
+                params,
+                remaining -
+                  1
+              );
+            }
+          );
+        }
+      );
+  }
+
+
+  function buildApplicationSyncContext() {
+    return {
+      draft_id:
+        applicationWizardState.draft_id,
+
+      application_id:
+        applicationWizardState.application_id,
+
+      step:
+        applicationWizardState.step,
+
+      data:
+        JSON.parse(
+          JSON.stringify(
+            applicationWizardState.data
+          )
+        ),
+
+      submit_requested:
+        Boolean(
+          applicationWizardState.submit_requested
+        ),
+
+      was_submitted:
+        Boolean(
+          applicationWizardState.was_submitted
+        ),
+
+      module_data:
+        applicationWizardState.module_data
+    };
+  }
+
+
+  function validWizardServerPayload(
+    data
+  ) {
+    return Boolean(
+      data &&
+      data.full_name &&
+      data.admission_id &&
+      data.target_id
+    );
+  }
+
+
+  function ensureApplicationServerRecord(
+    context
+  ) {
+    const payload =
+      Object.assign(
+        {},
+        context.data,
+        {
+          client_request_id:
+            context.draft_id
+        }
+      );
+
+    if (
+      context.application_id
+    ) {
+      payload.application_id =
+        context.application_id;
+    }
+
+    return wizardApiRequestWithRetry(
+      'application.save',
+      {
+        token:
+          getToken(),
+
+        payload:
+          payload
+      },
+      1
+    )
+      .then(
+        function (response) {
+          const ack =
+            response.data;
+
+          const application =
+            ack.application ||
+            {};
+
+          context.application_id =
+            application.application_id ||
+            context.application_id;
+
+          if (
+            applicationWizardState &&
+            applicationWizardState.draft_id ===
+              context.draft_id
+          ) {
+            applicationWizardState.application_id =
+              context.application_id;
+          }
+
+          return window.EduOffline
+            .saveDraft(
+              context.draft_id,
+              {
+                application_id:
+                  context.application_id,
+
+                step:
+                  context.step,
+
+                data:
+                  context.data,
+
+                submit_requested:
+                  context.submit_requested
+              }
+            )
+            .then(
+              function () {
+                optimisticPatchReceptionApplication(
+                  context,
+                  application
+                );
+
+                return application;
+              }
+            );
+        }
+      );
+  }
+
+
+  function queueApplicationWizardAutosave() {
+    if (
+      !applicationWizardState ||
+      !navigator.onLine ||
+      !validWizardServerPayload(
+        applicationWizardState.data
+      )
+    ) {
+      return Promise.resolve(
+        null
+      );
+    }
+
+    if (
+      applicationWizardState.autosave_promise
+    ) {
+      return applicationWizardState.autosave_promise;
+    }
+
+    const context =
+      buildApplicationSyncContext();
+
+    const promise =
+      ensureApplicationServerRecord(
+        context
+      )
+        .then(
+          function () {
+            return uploadApplicationFilesFromContext(
+              context,
+              {
+                only_type:
+                  'PHOTO',
+
+                silent:
+                  true
+              }
+            );
+          }
+        )
+        .catch(
+          function () {
+            /*
+             * Autosave tidak mengganggu user.
+             * Draft IndexedDB tetap menjadi sumber recovery.
+             */
+            return null;
+          }
+        )
+        .finally(
+          function () {
+            if (
+              applicationWizardState &&
+              applicationWizardState.draft_id ===
+                context.draft_id
+            ) {
+              applicationWizardState.autosave_promise =
+                null;
+            }
+          }
+        );
+
+    applicationWizardState.autosave_promise =
+      promise;
+
+    return promise;
+  }
+
+
+  function queueApplicationWizardSingleFileUpload(
+    documentType,
+    stateLabel
+  ) {
+    if (
+      !applicationWizardState ||
+      !navigator.onLine
+    ) {
+      return;
+    }
+
+    const state =
+      applicationWizardState;
+
+    const previous =
+      state.file_sync_chains[
+        documentType
+      ] ||
+      Promise.resolve();
+
+    state.file_sync_chains[
+      documentType
+    ] =
+      previous
+        .catch(
+          function () {
+            return null;
+          }
+        )
+        .then(
+          function () {
+            if (
+              stateLabel
+            ) {
+              stateLabel.textContent =
+                'Mengunggah di background…';
+            }
+
+            return queueApplicationWizardAutosave();
+          }
+        )
+        .then(
+          function () {
+            if (
+              !state.application_id
+            ) {
+              return null;
+            }
+
+            const context =
+              buildApplicationSyncContext();
+
+            context.application_id =
+              state.application_id;
+
+            return uploadApplicationFilesFromContext(
+              context,
+              {
+                only_type:
+                  documentType,
+
+                silent:
+                  true
+              }
+            );
+          }
+        )
+        .then(
+          function () {
+            if (
+              stateLabel
+            ) {
+              stateLabel.textContent =
+                'Tersimpan di server';
+            }
+          }
+        )
+        .catch(
+          function () {
+            if (
+              stateLabel
+            ) {
+              stateLabel.textContent =
+                'Tersimpan di perangkat • sinkronisasi tertunda';
+            }
+          }
+        );
+  }
+
+
   function saveApplicationWizard(
     submit
   ) {
@@ -7016,210 +7377,285 @@ window.EduApp = (function () {
         ? 'ONLINE'
         : 'OFFLINE_SYNC';
 
-    saveApplicationDraftOffline();
+    const context =
+      buildApplicationSyncContext();
 
-    if (
-      !navigator.onLine
-    ) {
-      toast(
-        submit
-          ? 'Pendaftaran disimpan offline. Kirim saat perangkat kembali online.'
-          : 'Draft tersimpan di perangkat.'
-      );
+    /*
+     * OFFLINE-FIRST / OPTIMISTIC:
+     *
+     * Klik Simpan/Kirim tidak menunggu Apps Script.
+     * Data masuk IndexedDB dulu, modal langsung ditutup.
+     * Backend melakukan sinkronisasi setelahnya.
+     */
+    window.EduOffline
+      .saveDraft(
+        context.draft_id,
+        {
+          application_id:
+            context.application_id,
 
-      closeModal();
+          step:
+            context.step,
 
-      renderOfflineApplicationDrafts(
-        applicationWizardState.module_data
-      );
+          data:
+            context.data,
 
-      return;
-    }
-
-    const button =
-      submit
-        ? document.getElementById(
-            'wizardNextButton'
-          )
-        : document.getElementById(
-            'wizardSaveDraftButton'
-          );
-
-    setButtonLoading(
-      button,
-      true,
-      submit
-        ? 'Mengirim…'
-        : 'Menyimpan…'
-    );
-
-    startLoading();
-
-    const payload =
-      Object.assign(
-        {},
-        applicationWizardState.data
-      );
-
-    if (
-      applicationWizardState.application_id
-    ) {
-      payload.application_id =
-        applicationWizardState.application_id;
-    }
-
-    Promise
-      .all(
-        applicationWizardState.pending_file_promises ||
-        []
-      )
-      .then(
-        function () {
-          return window.EduApi.request(
-            'application.save',
-            {
-              token:
-                getToken(),
-
-              payload:
-                payload
-            }
-          );
-        }
-      )
-      .then(
-        function (response) {
-          applicationWizardState.application_id =
-            response.data.application.application_id;
-
-          return uploadApplicationWizardFiles(
-            applicationWizardState.application_id
-          );
+          submit_requested:
+            context.submit_requested
         }
       )
       .then(
         function () {
-          if (
-            !submit ||
-            applicationWizardState.was_submitted
-          ) {
-            return null;
-          }
-
-          return window.EduApi.request(
-            'application.submit',
-            {
-              token:
-                getToken(),
-
-              application_id:
-                applicationWizardState.application_id
-            }
-          );
-        }
-      )
-      .then(
-        function () {
-          return window.EduOffline.deleteDraft(
-            applicationWizardState.draft_id
-          );
-        }
-      )
-      .then(
-        function () {
-          const applicationId =
-            applicationWizardState.application_id;
-
           closeModal();
 
-          invalidatePageCache(
-            'admissions'
-          );
+          if (
+            !navigator.onLine
+          ) {
+            toast(
+              submit
+                ? 'Pendaftaran aman di perangkat. Akan disinkronkan saat online.'
+                : 'Draft tersimpan di perangkat.'
+            );
 
-          invalidatePageCache(
-            'reception_new'
-          );
+            renderOfflineApplicationDrafts(
+              context.module_data
+            );
+
+            return;
+          }
 
           toast(
             submit
-              ? applicationWizardState.was_submitted
-                ? 'Perubahan pendaftaran berhasil disimpan: ' +
-                  applicationId
-                : 'Pendaftaran berhasil dikirim: ' +
-                  applicationId
-              : 'Draft server berhasil disimpan: ' +
-                applicationId
+              ? 'Pendaftaran tersimpan. Sinkronisasi berkas berjalan di background.'
+              : 'Draft tersimpan. Sinkronisasi server berjalan di background.'
           );
 
-          if (
-            activePage ===
-            'reception_hub'
-          ) {
-            receptionHubUiState.tab =
-              'applicants';
-
-            loadReceptionHub(
-              true
-            );
-
-            return;
-          }
-
-          if (
-            activePage ===
-            'reception_new'
-          ) {
-            receptionNewUiState.tab =
-              'applicants';
-
-            loadReceptionNew(
-              true
-            );
-
-            return;
-          }
-
-          admissionUiState.tab =
-            'applications';
-
-          loadAdmissions(
-            true
+          runApplicationBackgroundSync(
+            context,
+            {
+              announce:
+                true
+            }
           );
         }
       )
       .catch(
         function (error) {
           toast(
+            'Draft lokal gagal disimpan: ' +
             error.message
           );
-        }
-      )
-      .finally(
-        function () {
-          setButtonLoading(
-            button,
-            false
-          );
-
-          stopLoading();
         }
       );
   }
 
 
-  function uploadApplicationWizardFiles(
-    applicationId
+  function runApplicationBackgroundSync(
+    context,
+    options
   ) {
+    const opts =
+      options ||
+      {};
+
+    if (
+      !navigator.onLine ||
+      !validWizardServerPayload(
+        context.data
+      )
+    ) {
+      return Promise.resolve(
+        null
+      );
+    }
+
+    return ensureApplicationServerRecord(
+      context
+    )
+      .then(
+        function () {
+          /*
+           * PHOTO didahulukan karena SUBMIT hanya
+           * membutuhkan foto sebagai dokumen wajib awal.
+           */
+          return uploadApplicationFilesFromContext(
+            context,
+            {
+              only_type:
+                'PHOTO',
+
+              silent:
+                true
+            }
+          );
+        }
+      )
+      .then(
+        function () {
+          if (
+            !context.submit_requested ||
+            context.was_submitted
+          ) {
+            return null;
+          }
+
+          return wizardApiRequestWithRetry(
+            'application.submit',
+            {
+              token:
+                getToken(),
+
+              application_id:
+                context.application_id
+            },
+            1
+          )
+            .then(
+              function (response) {
+                const application =
+                  response.data.application ||
+                  {};
+
+                optimisticPatchReceptionApplication(
+                  context,
+                  application
+                );
+
+                if (
+                  opts.announce
+                ) {
+                  toast(
+                    'Pendaftaran berhasil dikirim: ' +
+                    context.application_id
+                  );
+                }
+
+                return application;
+              }
+            );
+        }
+      )
+      .then(
+        function () {
+          /*
+           * Dokumen selain PHOTO tidak memblokir submit.
+           * Upload dilanjutkan satu-per-satu di background
+           * agar Apps Script tidak dibanjiri request paralel.
+           */
+          return uploadApplicationFilesFromContext(
+            context,
+            {
+              exclude_type:
+                'PHOTO',
+
+              silent:
+                true
+            }
+          );
+        }
+      )
+      .then(
+        function () {
+          return window.EduOffline
+            .deleteDraft(
+              context.draft_id
+            );
+        }
+      )
+      .then(
+        function () {
+          refreshReceptionHubSilently(
+            false
+          );
+
+          return true;
+        }
+      )
+      .catch(
+        function (error) {
+          /*
+           * Jangan hapus draft.
+           * Retry dengan client_request_id yang sama aman.
+           */
+          if (
+            opts.announce
+          ) {
+            toast(
+              'Sinkronisasi tertunda. Data tetap aman di perangkat. ' +
+              error.message
+            );
+          }
+
+          return false;
+        }
+      );
+  }
+
+
+  function uploadApplicationFilesFromContext(
+    context,
+    options
+  ) {
+    const opts =
+      options ||
+      {};
+
+    if (
+      !context.application_id
+    ) {
+      return Promise.resolve();
+    }
+
     return window.EduOffline
       .getFiles(
-        applicationWizardState.draft_id
+        context.draft_id
       )
       .then(
         function (files) {
+          let selected =
+            files ||
+            [];
+
+          if (
+            opts.only_type
+          ) {
+            selected =
+              selected.filter(
+                function (row) {
+                  return (
+                    String(
+                      row.document_type
+                    ) ===
+                    String(
+                      opts.only_type
+                    )
+                  );
+                }
+              );
+          }
+
+          if (
+            opts.exclude_type
+          ) {
+            selected =
+              selected.filter(
+                function (row) {
+                  return (
+                    String(
+                      row.document_type
+                    ) !==
+                    String(
+                      opts.exclude_type
+                    )
+                  );
+                }
+              );
+          }
+
           let chain =
             Promise.resolve();
 
-          files.forEach(
+          selected.forEach(
             function (row) {
               chain =
                 chain.then(
@@ -7237,6 +7673,16 @@ window.EduApp = (function () {
                         }
                       );
 
+                    const clientUploadId =
+                      String(
+                        row.id
+                      ) +
+                      '|' +
+                      String(
+                        row.updated_at ||
+                        0
+                      );
+
                     return window.EduUpload.send(
                       'upload.application_file',
                       {
@@ -7244,10 +7690,13 @@ window.EduApp = (function () {
                           getToken(),
 
                         application_id:
-                          applicationId,
+                          context.application_id,
 
                         document_type:
-                          row.document_type
+                          row.document_type,
+
+                        client_upload_id:
+                          clientUploadId
                       },
                       file
                     );
@@ -7258,6 +7707,305 @@ window.EduApp = (function () {
 
           return chain;
         }
+      );
+  }
+
+
+  function optimisticPatchReceptionApplication(
+    context,
+    applicationAck
+  ) {
+    const cached =
+      getPageCache(
+        'reception_new'
+      );
+
+    if (
+      !cached ||
+      !context.application_id
+    ) {
+      return;
+    }
+
+    const admission =
+      (
+        cached.admissions ||
+        []
+      ).find(
+        function (row) {
+          return (
+            String(
+              row.admission_id
+            ) ===
+            String(
+              context.data.admission_id
+            )
+          );
+        }
+      );
+
+    const target =
+      admission &&
+      Array.isArray(
+        admission.targets
+      )
+        ? admission.targets.find(
+            function (row) {
+              return (
+                String(
+                  row.target_id
+                ) ===
+                String(
+                  context.data.target_id
+                )
+              );
+            }
+          )
+        : null;
+
+    const period =
+      (
+        cached.periods ||
+        []
+      ).find(
+        function (row) {
+          return (
+            admission &&
+            String(
+              row.period_id
+            ) ===
+            String(
+              admission.period_id
+            )
+          );
+        }
+      );
+
+    const nextRow =
+      Object.assign(
+        {},
+        context.data,
+        applicationAck ||
+        {},
+        {
+          application_id:
+            context.application_id,
+
+          entry_period_id:
+            admission
+              ? admission.period_id
+              : '',
+
+          admission_name:
+            admission
+              ? admission.admission_name
+              : '',
+
+          admission_code:
+            admission
+              ? admission.admission_code
+              : '',
+
+          admission_type:
+            admission
+              ? admission.admission_type
+              : '',
+
+          period_name:
+            period
+              ? period.period_name
+              : '',
+
+          program_name:
+            target
+              ? target.program_name
+              : '',
+
+          level_name:
+            target
+              ? target.level_name
+              : '',
+
+          status:
+            applicationAck?.status ||
+            'DRAFT',
+
+          stage_code:
+            applicationAck?.stage_code ||
+            'REGISTRATION',
+
+          stage_label:
+            applicationAck?.stage_label ||
+            'Pendaftaran',
+
+          updated_at:
+            applicationAck?.updated_at ||
+            new Date().toISOString()
+        }
+      );
+
+    const rows =
+      Array.isArray(
+        cached.applications
+      )
+        ? cached.applications.slice()
+        : [];
+
+    const index =
+      rows.findIndex(
+        function (row) {
+          return (
+            String(
+              row.application_id
+            ) ===
+            String(
+              context.application_id
+            )
+          );
+        }
+      );
+
+    if (
+      index >=
+      0
+    ) {
+      rows[
+        index
+      ] =
+        Object.assign(
+          {},
+          rows[
+            index
+          ],
+          nextRow
+        );
+
+    } else {
+      rows.unshift(
+        nextRow
+      );
+    }
+
+    const nextCache =
+      Object.assign(
+        {},
+        cached,
+        {
+          applications:
+            rows
+        }
+      );
+
+    setPageCache(
+      'reception_new',
+      nextCache
+    );
+
+    window.EduOffline
+      .saveCache(
+        'reception_hub',
+        nextCache
+      )
+      .catch(
+        function () {}
+      );
+
+    if (
+      activePage ===
+      'reception_hub'
+    ) {
+      renderReceptionHub(
+        nextCache
+      );
+    }
+  }
+
+
+  function syncPendingApplicationDraftsSilently(
+    moduleData
+  ) {
+    if (
+      !navigator.onLine
+    ) {
+      return;
+    }
+
+    window.EduOffline
+      .listDrafts()
+      .then(
+        function (rows) {
+          const eligible =
+            (
+              rows ||
+              []
+            )
+              .filter(
+                function (row) {
+                  return (
+                    row &&
+                    row.data &&
+                    validWizardServerPayload(
+                      row.data.data
+                    )
+                  );
+                }
+              )
+              .slice(
+                0,
+                3
+              );
+
+          let chain =
+            Promise.resolve();
+
+          eligible.forEach(
+            function (row) {
+              chain =
+                chain.then(
+                  function () {
+                    return runApplicationBackgroundSync(
+                      {
+                        draft_id:
+                          row.id,
+
+                        application_id:
+                          row.data.application_id ||
+                          '',
+
+                        step:
+                          row.data.step ||
+                          1,
+
+                        data:
+                          row.data.data ||
+                          {},
+
+                        submit_requested:
+                          Boolean(
+                            row.data.submit_requested
+                          ),
+
+                        was_submitted:
+                          false,
+
+                        module_data:
+                          moduleData
+                      },
+                      {
+                        announce:
+                          false
+                      }
+                    );
+                  }
+                );
+            }
+          );
+
+          return chain;
+        }
+      )
+      .catch(
+        function () {}
       );
   }
 
@@ -11208,37 +11956,205 @@ window.EduApp = (function () {
    * PENERIMAAN PESERTA — SAFE CANDIDATE v0.3.2
    * ========================================================= */
 
-  function loadReceptionHub(force) {
-    const cached = getPageCache('reception_new');
+  function loadReceptionHub(
+    force
+  ) {
+    const memoryCache =
+      getPageCache(
+        'reception_new'
+      );
 
-    if (cached && !force) {
-      renderReceptionHub(cached);
+    if (
+      memoryCache
+    ) {
+      /*
+       * CACHE FIRST:
+       * tampilkan data yang sudah ada sebelum backend bergerak.
+       */
+      renderReceptionHub(
+        memoryCache
+      );
+
+      refreshReceptionHubSilently(
+        Boolean(
+          force
+        )
+      );
+
       return;
     }
 
-    if (!cached) {
-      showPageLoading('Membuka Penerimaan Peserta…');
+    /*
+     * Tidak memakai global loading overlay.
+     * Coba data IndexedDB terlebih dahulu.
+     */
+    renderReceptionHubWarmShell();
+
+    window.EduOffline
+      .getCache(
+        'reception_hub',
+        24 *
+        60 *
+        60 *
+        1000
+      )
+      .then(
+        function (cached) {
+          if (
+            cached
+          ) {
+            setPageCache(
+              'reception_new',
+              cached
+            );
+
+            renderReceptionHub(
+              cached
+            );
+          }
+
+          return refreshReceptionHubSilently(
+            Boolean(
+              force
+            )
+          );
+        }
+      )
+      .catch(
+        function () {
+          refreshReceptionHubSilently(
+            Boolean(
+              force
+            )
+          );
+        }
+      );
+  }
+
+
+  function renderReceptionHubWarmShell() {
+    pageContent.innerHTML = `
+      <section class="rx-hero rx-hero--warm">
+        <div>
+          <p class="rx-kicker">
+            PENERIMAAN PESERTA
+          </p>
+
+          <h2>
+            Menyiapkan workspace penerimaan…
+          </h2>
+
+          <p>
+            Data terakhir akan langsung tampil jika sudah pernah dibuka.
+            Server memperbarui data di background.
+          </p>
+        </div>
+      </section>
+    `;
+  }
+
+
+  function refreshReceptionHubSilently(
+    force
+  ) {
+    if (
+      !navigator.onLine
+    ) {
+      return Promise.resolve(
+        null
+      );
     }
 
-    startLoading();
+    return window.EduApi
+      .request(
+        'reception.bootstrap',
+        {
+          token:
+            getToken(),
 
-    Promise.all([
-      window.EduApi.request('period.list', { token: getToken() }),
-      window.EduApi.request('admission.list', { token: getToken() }),
-      window.EduApi.request('application.list', { token: getToken() })
-    ])
-      .then(function (responses) {
-        const data = {
-          periods: Array.isArray(responses[0].data) ? responses[0].data : [],
-          admissions: Array.isArray(responses[1].data) ? responses[1].data : [],
-          applications: Array.isArray(responses[2].data) ? responses[2].data : []
-        };
+          force:
+            force
+              ? '1'
+              : ''
+        }
+      )
+      .then(
+        function (response) {
+          const data =
+            response.data ||
+            {
+              periods:
+                [],
 
-        setPageCache('reception_new', data);
-        renderReceptionHub(data);
-      })
-      .catch(renderPageError)
-      .finally(stopLoading);
+              admissions:
+                [],
+
+              applications:
+                []
+            };
+
+          setPageCache(
+            'reception_new',
+            data
+          );
+
+          window.EduOffline
+            .saveCache(
+              'reception_hub',
+              data
+            )
+            .catch(
+              function () {}
+            );
+
+          if (
+            activePage ===
+            'reception_hub'
+          ) {
+            renderReceptionHub(
+              data
+            );
+          }
+
+          syncPendingApplicationDraftsSilently(
+            data
+          );
+
+          return data;
+        }
+      )
+      .catch(
+        function (error) {
+          const cached =
+            getPageCache(
+              'reception_new'
+            );
+
+          if (
+            !cached &&
+            activePage ===
+              'reception_hub'
+          ) {
+            pageContent.innerHTML = `
+              <div class="rx-sync-error">
+                <span class="material-symbols-rounded">
+                  cloud_off
+                </span>
+
+                <strong>
+                  Server sedang lambat
+                </strong>
+
+                <p>
+                  Data lokal tetap aman. Coba refresh beberapa saat lagi.
+                </p>
+              </div>
+            `;
+          }
+
+          return null;
+        }
+      );
   }
 
 
@@ -15567,7 +16483,7 @@ window.EduApp = (function () {
         navigator
           .serviceWorker
           .register(
-            './service-worker.js?v=033'
+            './service-worker.js?v=034'
           )
           .catch(
             function (error) {

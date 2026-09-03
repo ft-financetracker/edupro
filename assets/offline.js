@@ -1,7 +1,7 @@
 /**
  * ============================================================
  * EDUCATION FINANCE
- * OFFLINE DRAFT STORE v0.3.0
+ * OFFLINE DRAFT + UI CACHE STORE v0.3.4
  * ============================================================
  *
  * IndexedDB:
@@ -18,13 +18,16 @@ window.EduOffline = (function () {
     'edu-finance-offline-v030';
 
   const DB_VERSION =
-    1;
+    2;
 
   const DRAFT_STORE =
     'drafts';
 
   const FILE_STORE =
     'files';
+
+  const CACHE_STORE =
+    'ui_cache';
 
 
   function openDb() {
@@ -75,6 +78,21 @@ window.EduOffline = (function () {
                 {
                   unique:
                     false
+                }
+              );
+            }
+
+
+            if (
+              !db.objectStoreNames.contains(
+                CACHE_STORE
+              )
+            ) {
+              db.createObjectStore(
+                CACHE_STORE,
+                {
+                  keyPath:
+                    'key'
                 }
               );
             }
@@ -505,6 +523,170 @@ window.EduOffline = (function () {
   }
 
 
+
+  function saveCache(
+    key,
+    data
+  ) {
+    return openDb()
+      .then(
+        function (db) {
+          return new Promise(
+            function (resolve, reject) {
+              const tx =
+                db.transaction(
+                  CACHE_STORE,
+                  'readwrite'
+                );
+
+              tx
+                .objectStore(
+                  CACHE_STORE
+                )
+                .put(
+                  {
+                    key:
+                      String(
+                        key
+                      ),
+
+                    data:
+                      data,
+
+                    saved_at:
+                      Date.now()
+                  }
+                );
+
+              tx.oncomplete =
+                function () {
+                  db.close();
+                  resolve();
+                };
+
+              tx.onerror =
+                function () {
+                  const error =
+                    tx.error;
+
+                  db.close();
+                  reject(
+                    error
+                  );
+                };
+            }
+          );
+        }
+      );
+  }
+
+
+  function getCache(
+    key,
+    maxAgeMs
+  ) {
+    return openDb()
+      .then(
+        function (db) {
+          return requestResult(
+            db
+              .transaction(
+                CACHE_STORE,
+                'readonly'
+              )
+              .objectStore(
+                CACHE_STORE
+              )
+              .get(
+                String(
+                  key
+                )
+              )
+          )
+            .then(
+              function (row) {
+                db.close();
+
+                if (
+                  !row
+                ) {
+                  return null;
+                }
+
+                const maxAge =
+                  Number(
+                    maxAgeMs ||
+                    0
+                  );
+
+                if (
+                  maxAge >
+                    0 &&
+                  Date.now() -
+                    Number(
+                      row.saved_at ||
+                      0
+                    ) >
+                    maxAge
+                ) {
+                  return null;
+                }
+
+                return row.data;
+              }
+            );
+        }
+      );
+  }
+
+
+  function deleteCache(
+    key
+  ) {
+    return openDb()
+      .then(
+        function (db) {
+          return new Promise(
+            function (resolve, reject) {
+              const tx =
+                db.transaction(
+                  CACHE_STORE,
+                  'readwrite'
+                );
+
+              tx
+                .objectStore(
+                  CACHE_STORE
+                )
+                .delete(
+                  String(
+                    key
+                  )
+                );
+
+              tx.oncomplete =
+                function () {
+                  db.close();
+                  resolve();
+                };
+
+              tx.onerror =
+                function () {
+                  const error =
+                    tx.error;
+
+                  db.close();
+                  reject(
+                    error
+                  );
+                };
+            }
+          );
+        }
+      );
+  }
+
+
   return {
     saveDraft:
       saveDraft,
@@ -523,6 +705,15 @@ window.EduOffline = (function () {
 
     getFiles:
       getFiles,
+
+    saveCache:
+      saveCache,
+
+    getCache:
+      getCache,
+
+    deleteCache:
+      deleteCache,
 
     isOnline:
       function () {

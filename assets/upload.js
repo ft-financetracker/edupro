@@ -1,7 +1,7 @@
 /**
  * ============================================================
  * EDUCATION FINANCE
- * FILE UPLOAD BRIDGE v0.3.0
+ * FILE UPLOAD BRIDGE v0.3.4 — IDEMPOTENT BACKGROUND
  * ============================================================
  *
  * GitHub Pages

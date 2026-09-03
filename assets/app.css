@@ -7410,3 +7410,81 @@ input:checked +
     width: 100%;
   }
 }
+
+
+/* ============================================================
+   v0.3.4 PERFORMANCE STATES
+   ============================================================ */
+
+.rx-hero--warm {
+  min-height: 170px;
+
+  display: flex;
+  align-items: center;
+
+  border: 1px solid #D8C8AE;
+
+  background:
+    linear-gradient(
+      135deg,
+      #3B2F2A,
+      #5A463A
+    );
+
+  color: #FFFFFF;
+}
+
+.rx-hero--warm h2 {
+  margin: 5px 0 0;
+
+  color: #FFFFFF;
+
+  font-size: 28px;
+}
+
+.rx-hero--warm p:last-child {
+  max-width: 650px;
+  margin: 9px 0 0;
+
+  color: rgba(255,255,255,.78);
+
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.rx-sync-error {
+  min-height: 220px;
+  padding: 24px;
+
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+
+  border: 1px solid #E2D7CE;
+  border-radius: 18px;
+
+  background: #FFFFFF;
+
+  text-align: center;
+}
+
+.rx-sync-error > .material-symbols-rounded {
+  font-size: 36px;
+
+  color: #8C6A3E;
+}
+
+.rx-sync-error strong {
+  color: #302722;
+
+  font-size: 16px;
+}
+
+.rx-sync-error p {
+  margin: 0;
+
+  color: #766C66;
+
+  font-size: 12px;
+}

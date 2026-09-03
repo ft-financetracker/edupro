@@ -1,12 +1,12 @@
 /**
  * ============================================================
  * EDUCATION FINANCE & MANAGEMENT PLATFORM
- * SERVICE WORKER v0.3.3
+ * SERVICE WORKER v0.3.4
  * ============================================================
  */
 
 const CACHE_NAME =
-  'education-finance-v0-3-3';
+  'education-finance-v0-3-4';
 
 const APP_SHELL = [
   './',
@@ -14,12 +14,12 @@ const APP_SHELL = [
   './offline.html',
   './manifest.webmanifest',
 
-  './assets/app.css?v=033',
-  './assets/config.js?v=033',
-  './assets/api.js?v=033',
-  './assets/offline.js?v=033',
-  './assets/upload.js?v=033',
-  './assets/app.js?v=033',
+  './assets/app.css?v=034',
+  './assets/config.js?v=034',
+  './assets/api.js?v=034',
+  './assets/offline.js?v=034',
+  './assets/upload.js?v=034',
+  './assets/app.js?v=034',
 
   './icons/icon-192.png',
   './icons/icon-512.png'
