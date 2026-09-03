@@ -7294,3 +7294,119 @@ input:checked +
     width: 100%;
   }
 }
+
+
+/* ============================================================
+   v0.3.3 — ROUTE DROPDOWN + SOFT DELETE PATCH
+   Penerimaan Peserta only
+   ============================================================ */
+
+.wizard-route-helper {
+  display: block;
+  margin-top: 6px;
+
+  color: #6D625B;
+
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.rx-icon-button.is-danger {
+  border-color: #E7C9C4;
+
+  background: #FFF8F7;
+  color: #9A4138;
+}
+
+.rx-icon-button.is-danger:hover {
+  border-color: #DCA39B;
+
+  background: #FBE9E6;
+  color: #87352E;
+}
+
+.rx-delete-dialog {
+  display: grid;
+  gap: 16px;
+
+  color: #2D2521;
+}
+
+.rx-delete-dialog__icon {
+  width: 58px;
+  height: 58px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 17px;
+}
+
+.rx-delete-dialog__icon .material-symbols-rounded {
+  font-size: 30px;
+}
+
+.rx-delete-dialog__icon.is-warning {
+  border: 1px solid #E9D49F;
+
+  background: #FFF4D9;
+  color: #78571B;
+}
+
+.rx-delete-dialog__icon.is-danger {
+  border: 1px solid #E9C5C0;
+
+  background: #FCEBE8;
+  color: #963D35;
+}
+
+.rx-delete-dialog h3 {
+  margin: 3px 0 0;
+
+  color: #2B231F;
+
+  font-size: 21px;
+  line-height: 1.2;
+}
+
+.rx-delete-dialog p:not(.rx-kicker) {
+  margin: 7px 0 0;
+
+  color: #6E645E;
+
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.rx-delete-dialog p strong {
+  color: #362D28;
+}
+
+.rx-delete-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.rx-button--danger {
+  border: 1px solid #A8443B;
+
+  background: #A8443B;
+  color: #FFFFFF;
+}
+
+.rx-button--danger:hover {
+  background: #8E3932;
+}
+
+@media (max-width: 560px) {
+  .rx-delete-dialog__actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .rx-delete-dialog__actions .rx-button {
+    width: 100%;
+  }
+}

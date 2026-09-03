@@ -1,7 +1,7 @@
 /**
  * ============================================================
  * EDUCATION FINANCE & MANAGEMENT PLATFORM
- * FRONTEND APP v0.3.2 — PENERIMAAN PESERTA (SAFE CANDIDATE)
+ * FRONTEND APP v0.3.3 — PENERIMAAN PESERTA (SAFE CANDIDATE)
  * ============================================================
  *
  * FOCUS:
@@ -5538,43 +5538,18 @@ window.EduApp = (function () {
               Pilih jalur
             </option>
 
-            ${moduleData.admissions
-              .filter(
-                function (admission) {
-                  return (
-                    String(
-                      admission.status
-                    ) ===
-                    'ACTIVE' &&
-                    Array.isArray(
-                      admission.targets
-                    ) &&
-                    admission.targets.length
-                  );
-                }
-              )
-              .map(
-                function (admission) {
-                  return `
-                    <option
-                      value="${escapeHtml(admission.admission_id)}"
-                      ${
-                        state.data.admission_id ===
-                        admission.admission_id
-                          ? 'selected'
-                          : ''
-                      }
-                    >
-                      ${escapeHtml(admission.admission_name)}
-                      •
-                      ${escapeHtml(admission.period_name)}
-                    </option>
-                  `;
-                }
-              )
-              .join('')}
+            ${renderWizardAdmissionOptions(
+              moduleData.admissions,
+              state.data.admission_id
+            )}
 
           </select>
+
+          <small class="wizard-route-helper">
+            ${wizardAdmissionHelperText(
+              moduleData.admissions
+            )}
+          </small>
 
         </label>
 
@@ -5770,6 +5745,208 @@ window.EduApp = (function () {
   }
 
 
+  function wizardNormalizedStatus(
+    value,
+    fallback
+  ) {
+    return String(
+      value ||
+      fallback ||
+      ''
+    )
+      .trim()
+      .toUpperCase();
+  }
+
+
+  function wizardActiveTargets(
+    admission
+  ) {
+    return (
+      Array.isArray(
+        admission?.targets
+      )
+        ? admission.targets
+        : []
+    ).filter(
+      function (target) {
+        const status =
+          wizardNormalizedStatus(
+            target.status,
+            'ACTIVE'
+          );
+
+        return (
+          status !==
+            'DELETED' &&
+          status !==
+            'INACTIVE'
+        );
+      }
+    );
+  }
+
+
+  function renderWizardAdmissionOptions(
+    admissions,
+    selectedAdmissionId
+  ) {
+    const rows =
+      Array.isArray(
+        admissions
+      )
+        ? admissions
+        : [];
+
+    return rows
+      .filter(
+        function (admission) {
+          return (
+            wizardNormalizedStatus(
+              admission.status,
+              'ACTIVE'
+            ) !==
+            'DELETED'
+          );
+        }
+      )
+      .map(
+        function (admission) {
+          const status =
+            wizardNormalizedStatus(
+              admission.status,
+              'ACTIVE'
+            );
+
+          const activeTargets =
+            wizardActiveTargets(
+              admission
+            );
+
+          const selectable =
+            status ===
+              'ACTIVE' &&
+            activeTargets.length >
+              0;
+
+          let reason =
+            '';
+
+          if (
+            status !==
+            'ACTIVE'
+          ) {
+            reason =
+              ' — Jalur nonaktif';
+          } else if (
+            !activeTargets.length
+          ) {
+            reason =
+              ' — Target masuk belum aktif';
+          }
+
+          return `
+            <option
+              value="${escapeHtml(admission.admission_id)}"
+              ${
+                String(
+                  selectedAdmissionId ||
+                  ''
+                ) ===
+                String(
+                  admission.admission_id
+                )
+                  ? 'selected'
+                  : ''
+              }
+              ${
+                selectable
+                  ? ''
+                  : 'disabled'
+              }
+            >
+              ${escapeHtml(admission.admission_name)}
+              ${
+                admission.period_name
+                  ? ' • ' +
+                    escapeHtml(
+                      admission.period_name
+                    )
+                  : ''
+              }
+              ${escapeHtml(reason)}
+            </option>
+          `;
+        }
+      )
+      .join('');
+  }
+
+
+  function wizardAdmissionHelperText(
+    admissions
+  ) {
+    const rows =
+      Array.isArray(
+        admissions
+      )
+        ? admissions
+        : [];
+
+    const visible =
+      rows.filter(
+        function (admission) {
+          return (
+            wizardNormalizedStatus(
+              admission.status,
+              'ACTIVE'
+            ) !==
+            'DELETED'
+          );
+        }
+      );
+
+    const selectable =
+      visible.filter(
+        function (admission) {
+          return (
+            wizardNormalizedStatus(
+              admission.status,
+              'ACTIVE'
+            ) ===
+              'ACTIVE' &&
+            wizardActiveTargets(
+              admission
+            ).length >
+              0
+          );
+        }
+      );
+
+    if (
+      selectable.length
+    ) {
+      return (
+        selectable.length +
+        ' jalur siap digunakan.'
+      );
+    }
+
+    if (
+      visible.length
+    ) {
+      return (
+        visible.length +
+        ' jalur ditemukan, tetapi belum memiliki target masuk aktif atau status jalurnya nonaktif.'
+      );
+    }
+
+    return (
+      'Belum ada jalur pendaftaran pada konteks Tahun Ajaran ini.'
+    );
+  }
+
+
   function renderWizardTargetOptions(
     admission,
     selectedTargetId
@@ -5784,30 +5961,40 @@ window.EduApp = (function () {
       `;
     }
 
+    const activeTargets =
+      wizardActiveTargets(
+        admission
+      );
+
+    if (
+      !activeTargets.length
+    ) {
+      return `
+        <option value="">
+          Target masuk belum tersedia
+        </option>
+      `;
+    }
+
     return `
       <option value="">
         Pilih target
       </option>
 
-      ${(admission.targets || [])
-        .filter(
-          function (target) {
-            return (
-              String(
-                target.status
-              ) ===
-              'ACTIVE'
-            );
-          }
-        )
+      ${activeTargets
         .map(
           function (target) {
             return `
               <option
                 value="${escapeHtml(target.target_id)}"
                 ${
-                  selectedTargetId ===
-                  target.target_id
+                  String(
+                    selectedTargetId ||
+                    ''
+                  ) ===
+                  String(
+                    target.target_id
+                  )
                     ? 'selected'
                     : ''
                 }
@@ -5822,7 +6009,6 @@ window.EduApp = (function () {
         .join('')}
     `;
   }
-
 
   function renderWizardTargetPreview(
     admission,
@@ -11623,6 +11809,15 @@ window.EduApp = (function () {
             >
               <span class="material-symbols-rounded">edit</span>
             </button>
+
+            <button
+              class="rx-icon-button is-danger"
+              type="button"
+              title="Hapus jalur"
+              data-rx-delete-route="${escapeHtml(admission.admission_id)}"
+            >
+              <span class="material-symbols-rounded">delete</span>
+            </button>
           </div>
         </div>
       </article>
@@ -11806,6 +12001,20 @@ window.EduApp = (function () {
       });
     });
 
+    document.querySelectorAll('[data-rx-delete-route]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        const admission = admissions.find(function (row) {
+          return String(row.admission_id) === String(button.dataset.rxDeleteRoute);
+        });
+
+        if (admission) {
+          openReceptionHubDeleteRouteConfirm(
+            admission
+          );
+        }
+      });
+    });
+
     const search = document.getElementById('rxApplicantSearch');
     const route = document.getElementById('rxRouteFilter');
     const stage = document.getElementById('rxStageFilter');
@@ -11843,6 +12052,227 @@ window.EduApp = (function () {
     });
   }
 
+
+
+
+  function openReceptionHubDeleteRouteConfirm(
+    admission
+  ) {
+    const applicationCount =
+      Number(
+        admission.application_count ||
+        0
+      );
+
+    if (
+      applicationCount >
+      0
+    ) {
+      modal(
+        `
+          <div class="rx-delete-dialog">
+
+            <span class="rx-delete-dialog__icon is-warning">
+              <span class="material-symbols-rounded">
+                lock
+              </span>
+            </span>
+
+            <div>
+              <p class="rx-kicker">
+                JALUR SUDAH DIGUNAKAN
+              </p>
+
+              <h3>
+                Jalur tidak dapat dihapus
+              </h3>
+
+              <p>
+                <strong>
+                  ${escapeHtml(admission.admission_name)}
+                </strong>
+                sudah digunakan oleh
+                <strong>
+                  ${numberFormat(applicationCount)}
+                </strong>
+                pendaftar.
+              </p>
+
+              <p>
+                Demi riwayat dan audit, jalur yang sudah memiliki
+                pendaftar tidak dihapus. Jika tidak dipakai lagi,
+                ubah statusnya menjadi
+                <strong>Tidak Aktif</strong>.
+              </p>
+            </div>
+
+            <div class="rx-delete-dialog__actions">
+              <button
+                class="rx-button rx-button--primary"
+                type="button"
+                data-modal-close
+              >
+                Mengerti
+              </button>
+            </div>
+
+          </div>
+        `,
+        'sheet'
+      );
+
+      return;
+    }
+
+    modal(
+      `
+        <div class="rx-delete-dialog">
+
+          <span class="rx-delete-dialog__icon is-danger">
+            <span class="material-symbols-rounded">
+              delete
+            </span>
+          </span>
+
+          <div>
+            <p class="rx-kicker">
+              HAPUS JALUR
+            </p>
+
+            <h3>
+              Hapus ${escapeHtml(admission.admission_name)}?
+            </h3>
+
+            <p>
+              Jalur ini belum digunakan oleh pendaftar sehingga
+              aman untuk dihapus.
+            </p>
+
+            <p>
+              Sistem menggunakan
+              <strong>soft delete</strong>.
+              Record tidak dihapus fisik dari database dan tetap
+              tercatat pada audit trail.
+            </p>
+          </div>
+
+          <div class="rx-delete-dialog__actions">
+
+            <button
+              class="rx-button rx-button--secondary"
+              type="button"
+              data-modal-close
+            >
+              Batal
+            </button>
+
+            <button
+              id="rxConfirmDeleteRouteButton"
+              class="rx-button rx-button--danger"
+              type="button"
+            >
+              <span class="material-symbols-rounded">
+                delete
+              </span>
+
+              Hapus Jalur
+            </button>
+
+          </div>
+
+        </div>
+      `,
+      'sheet'
+    );
+
+    document
+      .getElementById(
+        'rxConfirmDeleteRouteButton'
+      )
+      ?.addEventListener(
+        'click',
+        function () {
+          deleteReceptionHubRoute(
+            admission.admission_id
+          );
+        }
+      );
+  }
+
+
+  function deleteReceptionHubRoute(
+    admissionId
+  ) {
+    const button =
+      document.getElementById(
+        'rxConfirmDeleteRouteButton'
+      );
+
+    setButtonLoading(
+      button,
+      true,
+      'Menghapus…'
+    );
+
+    startLoading();
+
+    window.EduApi
+      .request(
+        'admission.delete',
+        {
+          token:
+            getToken(),
+
+          admission_id:
+            admissionId
+        }
+      )
+      .then(
+        function () {
+          closeModal();
+
+          invalidatePageCache(
+            'admissions'
+          );
+
+          invalidatePageCache(
+            'reception_new'
+          );
+
+          invalidatePageCache(
+            'participants'
+          );
+
+          toast(
+            'Jalur Pendaftaran berhasil dihapus.'
+          );
+
+          receptionHubUiState.tab =
+            'routes';
+
+          loadReceptionHub(
+            true
+          );
+        }
+      )
+      .catch(
+        function (error) {
+          toast(
+            error.message
+          );
+        }
+      )
+      .finally(
+        function () {
+          setButtonLoading(
+            button,
+            false
+          );
+
+          stopLoading();
+        }
+      );
+  }
 
 
 
@@ -15137,7 +15567,7 @@ window.EduApp = (function () {
         navigator
           .serviceWorker
           .register(
-            './service-worker.js?v=032'
+            './service-worker.js?v=033'
           )
           .catch(
             function (error) {
